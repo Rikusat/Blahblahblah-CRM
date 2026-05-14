@@ -4,7 +4,7 @@ import pandas as pd
 from auth import check_password
 from sheets import get_dataframe, update_row, add_row, delete_row, write_replied
 
-st.set_page_config(page_title="CRM", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Octail", page_icon="📊", layout="wide")
 
 if not check_password():
     st.stop()
@@ -83,7 +83,7 @@ def render_cards(df: pd.DataFrame):
 # Sidebar
 # ---------------------------------------------------------------------------
 
-st.sidebar.title("📊 CRM")
+st.sidebar.title("📊 Octail")
 page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "見込み", "新規登録"])
 
 if st.sidebar.button("🔄 データ更新"):
