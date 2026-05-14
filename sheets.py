@@ -8,6 +8,9 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
+HEADER_ROW = 3   # 3行目がカラム名
+DATA_OFFSET = 4  # データはシートの4行目から（DataFrame index 0 = sheet row 4）
+
 
 def _get_worksheet() -> gspread.Worksheet:
     creds = Credentials.from_service_account_info(
@@ -21,12 +24,12 @@ def _get_worksheet() -> gspread.Worksheet:
 def get_dataframe() -> pd.DataFrame:
     ws = _get_worksheet()
     values = ws.get_all_values()
-    if not values:
+    if len(values) < HEADER_ROW:
         return pd.DataFrame()
-    headers = _deduplicate_headers(values[0])
-    if len(values) == 1:
+    headers = _deduplicate_headers(values[HEADER_ROW - 1])  # 3行目（index 2）
+    if len(values) <= HEADER_ROW:
         return pd.DataFrame(columns=headers)
-    return pd.DataFrame(values[1:], columns=headers)
+    return pd.DataFrame(values[HEADER_ROW:], columns=headers)  # 4行目以降
 
 
 def _deduplicate_headers(headers: list[str]) -> list[str]:
@@ -42,33 +45,28 @@ def _deduplicate_headers(headers: list[str]) -> list[str]:
     return result
 
 
-def get_headers() -> list[str]:
-    ws = _get_worksheet()
-    return ws.row_values(1)
-
-
 def update_row(row_index: int, data: dict) -> None:
     ws = _get_worksheet()
-    headers = ws.row_values(1)
-    sheet_row = row_index + 2  # 1-indexed + header offset
+    headers = ws.row_values(HEADER_ROW)
+    sheet_row = row_index + DATA_OFFSET
     for col_idx, header in enumerate(headers, start=1):
         ws.update_cell(sheet_row, col_idx, data.get(header, ""))
 
 
 def add_row(data: dict) -> None:
     ws = _get_worksheet()
-    headers = ws.row_values(1)
+    headers = ws.row_values(HEADER_ROW)
     row = [data.get(h, "") for h in headers]
     ws.append_row(row, value_input_option="USER_ENTERED")
 
 
 def delete_row(row_index: int) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + 2  # 1-indexed + header offset
+    sheet_row = row_index + DATA_OFFSET
     ws.delete_rows(sheet_row)
 
 
 def write_replied(row_index: int) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + 2  # 1-indexed + header offset
+    sheet_row = row_index + DATA_OFFSET
     ws.update_cell(sheet_row, 9, "返信あり")  # Column I = 9
