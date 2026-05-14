@@ -20,10 +20,13 @@ def _get_worksheet() -> gspread.Worksheet:
 
 def get_dataframe() -> pd.DataFrame:
     ws = _get_worksheet()
-    records = ws.get_all_records()
-    if not records:
+    values = ws.get_all_values()
+    if not values:
         return pd.DataFrame()
-    return pd.DataFrame(records)
+    headers = values[0]
+    if len(values) == 1:
+        return pd.DataFrame(columns=headers)
+    return pd.DataFrame(values[1:], columns=headers)
 
 
 def get_headers() -> list[str]:
