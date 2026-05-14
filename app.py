@@ -385,6 +385,8 @@ elif page == "顧客一覧":
 # ---------------------------------------------------------------------------
 
 elif page == "見込み":
+    from datetime import datetime
+
     st.title("PROSPECTS")
 
     if df.empty:
@@ -395,8 +397,9 @@ elif page == "見込み":
         st.warning("I列（9列目）がスプレッドシートに存在しません。")
         st.stop()
 
-    col_i = df.columns[8]
-    mikomi = df[df[col_i].astype(str).str.contains("返信あり", na=False)]
+    col_i    = df.columns[8]
+    memo_col = df.columns[9] if len(df.columns) >= 10 else None
+    mikomi   = df[df[col_i].astype(str).str.contains("返信あり", na=False)]
 
     st.caption(f"返信あり：{len(mikomi)} 件")
 
@@ -404,44 +407,87 @@ elif page == "見込み":
         st.info("返信ありの顧客はまだいません。")
         st.stop()
 
-    render_cards(mikomi)
+    # --- カード表示（メモ + 編集ボタン付き）---
+    name_col   = find_col(mikomi, "事業所名", "会社名", "担当者名", "名前")
+    ind_col    = find_col(mikomi, "業種")
+    person_col = find_col(mikomi, "担当者名", "担当者名/代表者名", "代表者名")
+    email_col  = find_col(mikomi, "メールアドレス", "メール")
+    url_col    = find_col(mikomi, "URL", "url", "ウェブサイト")
 
-    st.divider()
-    st.subheader("MEMO  ( J列 )")
+    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    for n_row, (idx, row) in enumerate(mikomi.iterrows()):
+        i = n_row % N_CARDS_PER_ROW
+        if i == 0 and n_row > 0:
+            cols = st.columns(N_CARDS_PER_ROW, gap="large")
+        with cols[i]:
+            with st.container(border=True):
+                if name_col:
+                    st.markdown(f"**{row[name_col]}**")
+                if ind_col:
+                    st.caption(f"🏢 {row[ind_col]}")
+                if person_col and person_col != name_col:
+                    st.markdown(f"👤 {row[person_col]}")
+                if email_col and row[email_col]:
+                    st.markdown(f"📧 {row[email_col]}")
+                if url_col and row[url_col]:
+                    url = str(row[url_col]).strip()
+                    st.markdown(f"🔗 [{url}]({url})")
 
-    label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
-    memo_col  = df.columns[9] if len(df.columns) >= 10 else None
-    option_labels = {
-        idx: f"#{idx + 1}  {row[label_col]}" if label_col else f"#{idx + 1}"
-        for idx, row in mikomi.iterrows()
-    }
+                # J列メモ表示
+                if memo_col and memo_col in row.index:
+                    memo_val = str(row[memo_col])
+                    if memo_val not in ("", "nan", "None"):
+                        st.markdown(
+                            f"<div style='color:#666;font-family:monospace;font-size:.78rem;"
+                            f"border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;"
+                            f"white-space:pre-wrap;'>{memo_val[:150]}{'…' if len(memo_val)>150 else ''}</div>",
+                            unsafe_allow_html=True,
+                        )
 
-    selected_idx = st.selectbox("顧客を選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="mikomi_select")
+                if st.button("✏️ 編集", key=f"mikomi_edit_{idx}", use_container_width=True):
+                    st.session_state["mikomi_editing_idx"] = idx
+                    st.rerun()
 
-    current_memo = str(df.loc[selected_idx, memo_col]) if memo_col and memo_col in df.columns else ""
-    if current_memo in ("nan", "None"):
-        current_memo = ""
+    # --- 編集フォーム（編集ボタン押下後に表示）---
+    editing_idx = st.session_state.get("mikomi_editing_idx")
+    if editing_idx is not None and editing_idx in mikomi.index:
+        st.divider()
+        st.subheader("MEMO  ( J列 )")
 
-    memo_key = f"mikomi_memo_{selected_idx}"
-    if memo_key not in st.session_state:
-        st.session_state[memo_key] = current_memo
+        label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
+        label = f"#{editing_idx + 1}  {mikomi.loc[editing_idx, label_col]}" if label_col else f"#{editing_idx + 1}"
+        st.caption(f"編集中：{label}")
 
-    # Timestamp button
-    from datetime import datetime
-    ts_col, _ = st.columns([1, 5])
-    with ts_col:
-        if st.button("📅 日付挿入", key="ts_btn", use_container_width=True):
-            ts = datetime.now().strftime("%Y/%m/%d  %H:%M  ")
-            existing = st.session_state[memo_key]
-            st.session_state[memo_key] = (existing + "\n" + ts).lstrip("\n")
-            st.rerun()
+        current_memo = str(df.loc[editing_idx, memo_col]) if memo_col else ""
+        if current_memo in ("nan", "None"):
+            current_memo = ""
 
-    st.text_area("メモ", placeholder="Take a note...", key=memo_key, height=200)
+        memo_key = f"mikomi_memo_{editing_idx}"
+        if memo_key not in st.session_state:
+            st.session_state[memo_key] = current_memo
 
-    if st.button("💾 メモを保存", type="primary", use_container_width=True, key="save_memo_btn"):
-        with st.spinner("保存中..."):
-            write_mikomi_memo(selected_idx, st.session_state[memo_key])
-        reload(); st.success("メモを保存しました"); st.rerun()
+        ts_col, _ = st.columns([1, 5])
+        with ts_col:
+            if st.button("📅 日付挿入", key="ts_btn", use_container_width=True):
+                ts = datetime.now().strftime("%Y/%m/%d  %H:%M  ")
+                existing = st.session_state[memo_key]
+                st.session_state[memo_key] = (existing + "\n" + ts).lstrip("\n")
+                st.rerun()
+
+        st.text_area("メモ", placeholder="Take a note...", key=memo_key, height=200)
+
+        sv_col, cl_col = st.columns(2)
+        with sv_col:
+            if st.button("💾 保存", type="primary", use_container_width=True, key="save_memo_btn"):
+                with st.spinner("保存中..."):
+                    write_mikomi_memo(editing_idx, st.session_state[memo_key])
+                reload()
+                st.success("メモを保存しました")
+                st.rerun()
+        with cl_col:
+            if st.button("✕ 閉じる", use_container_width=True, key="close_memo_btn"):
+                del st.session_state["mikomi_editing_idx"]
+                st.rerun()
 
 # ---------------------------------------------------------------------------
 # 受注リスト
