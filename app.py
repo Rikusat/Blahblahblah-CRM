@@ -29,16 +29,16 @@ def reload():
 TEXTAREA_KEYWORDS = {"備考", "メモ", "次回アクション", "notes", "memo", "コメント"}
 
 
-def render_fields(columns: list[str], defaults: dict | None = None) -> dict:
-    """Render input widgets for each column and return a dict of values."""
+def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
     values = {}
     defaults = defaults or {}
     for col in columns:
         val = str(defaults.get(col, "")) if pd.notna(defaults.get(col, "")) else ""
+        key = f"{key_prefix}__{col}" if key_prefix else col
         if col in TEXTAREA_KEYWORDS:
-            values[col] = st.text_area(col, value=val)
+            values[col] = st.text_area(col, value=val, key=key)
         else:
-            values[col] = st.text_input(col, value=val)
+            values[col] = st.text_input(col, value=val, key=key)
     return values
 
 
@@ -160,7 +160,7 @@ elif page == "顧客一覧":
     row_data = df.loc[selected_idx].to_dict()
 
     with st.form("edit_form"):
-        edited = render_fields(list(df.columns), defaults=row_data)
+        edited = render_fields(list(df.columns), defaults=row_data, key_prefix=f"edit_{selected_idx}")
         c1, c2 = st.columns(2)
         save = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
         delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
