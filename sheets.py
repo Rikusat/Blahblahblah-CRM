@@ -23,10 +23,23 @@ def get_dataframe() -> pd.DataFrame:
     values = ws.get_all_values()
     if not values:
         return pd.DataFrame()
-    headers = values[0]
+    headers = _deduplicate_headers(values[0])
     if len(values) == 1:
         return pd.DataFrame(columns=headers)
     return pd.DataFrame(values[1:], columns=headers)
+
+
+def _deduplicate_headers(headers: list[str]) -> list[str]:
+    seen: dict[str, int] = {}
+    result = []
+    for h in headers:
+        if h in seen:
+            seen[h] += 1
+            result.append(f"{h}_{seen[h]}")
+        else:
+            seen[h] = 0
+            result.append(h)
+    return result
 
 
 def get_headers() -> list[str]:
