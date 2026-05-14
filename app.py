@@ -4,7 +4,99 @@ import pandas as pd
 from auth import check_password
 from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo
 
-st.set_page_config(page_title="Octail", page_icon="📊", layout="wide")
+st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
+
+# ---------------------------------------------------------------------------
+# Global CSS
+# ---------------------------------------------------------------------------
+
+st.markdown("""
+<style>
+#MainMenu, footer, header { visibility: hidden; }
+
+/* ── Base ── */
+.stApp { background-color: #0d0d0d; }
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background-color: #080808;
+    border-right: 1px solid #1a1a1a;
+}
+[data-testid="stSidebar"] .stRadio label {
+    font-family: monospace;
+    color: #aaa;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+/* ── Headings ── */
+h1 { color: #FF8C00 !important; font-family: monospace !important; letter-spacing: 2px !important; }
+h2, h3 { color: #cc7000 !important; font-family: monospace !important; }
+
+/* ── Metrics ── */
+[data-testid="stMetric"] {
+    background: #111;
+    border: 1px solid #1e1e1e;
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+}
+[data-testid="stMetricLabel"] p  { color: #555 !important; font-size: 0.7rem !important; text-transform: uppercase; letter-spacing: 2px; font-family: monospace; }
+[data-testid="stMetricValue"]    { color: #FF8C00 !important; font-family: monospace !important; }
+[data-testid="stMetricDelta"]    { color: #888 !important; }
+
+/* ── Buttons ── */
+.stButton > button {
+    background: #111; border: 1px solid #2a2a2a;
+    color: #ccc; font-family: monospace;
+    border-radius: 3px; transition: all .15s;
+}
+.stButton > button:hover { border-color: #FF8C00; color: #FF8C00; background: #0d0d0d; }
+[data-testid="baseButton-primary"] {
+    background: #FF8C00 !important; border-color: #FF8C00 !important; color: #000 !important;
+}
+[data-testid="baseButton-secondary"]:hover { border-color: #FF8C00 !important; color: #FF8C00 !important; }
+
+/* ── Inputs ── */
+.stTextInput input, .stTextArea textarea, .stSelectbox > div > div {
+    background: #0a0a0a !important; border: 1px solid #222 !important;
+    color: #d4d4d4 !important; font-family: monospace !important;
+    border-radius: 4px !important;
+}
+.stTextArea textarea::placeholder { color: #444 !important; }
+
+/* ── Progress ── */
+.stProgress > div > div > div > div { background: #FF8C00 !important; }
+.stProgress > div > div > div { background: #1a1a1a !important; border-radius: 4px; }
+
+/* ── Bordered containers (cards) ── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #111 !important; border: 1px solid #1e1e1e !important; border-radius: 8px !important;
+}
+
+/* ── DataFrame ── */
+[data-testid="stDataFrame"] { border: 1px solid #1e1e1e; border-radius: 6px; overflow: hidden; }
+
+/* ── Divider ── */
+hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
+
+/* ── Caption / small text ── */
+.stCaption p { color: #444 !important; font-family: monospace !important; font-size: 0.75rem !important; }
+
+/* ── Radio ── */
+.stRadio > div { gap: 0.4rem; }
+
+/* ── Selectbox text ── */
+.stSelectbox span { font-family: monospace !important; }
+
+/* ── Terminal memo textarea special ── */
+.terminal-memo textarea {
+    background: #060606 !important; border: 1px solid #1a1a1a !important;
+    color: #d4d4d4 !important; font-family: monospace !important;
+    font-size: 1rem !important; line-height: 1.7 !important;
+    min-height: 200px !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 if not check_password():
     st.stop()
@@ -83,15 +175,24 @@ def render_cards(df: pd.DataFrame):
 # Sidebar
 # ---------------------------------------------------------------------------
 
-st.sidebar.title("📊 Octail")
-page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "見込み", "受注リスト"])
+st.sidebar.markdown(
+    "<div style='padding:1.2rem 0 0.4rem;font-size:1.3rem;font-family:monospace;color:#FF8C00;font-weight:700;letter-spacing:3px;'>◈ OCTAIL</div>",
+    unsafe_allow_html=True,
+)
+st.sidebar.markdown("<div style='color:#333;font-size:0.65rem;font-family:monospace;letter-spacing:2px;margin-bottom:1rem;'>CRM SYSTEM</div>", unsafe_allow_html=True)
 
-if st.sidebar.button("🔄 データ更新"):
+page = st.sidebar.radio(
+    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト"],
+    label_visibility="collapsed",
+)
+
+st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_allow_html=True)
+
+if st.sidebar.button("⟳  データ更新", use_container_width=True):
     reload()
     st.rerun()
 
-st.sidebar.divider()
-if st.sidebar.button("ログアウト"):
+if st.sidebar.button("→  ログアウト", use_container_width=True):
     st.session_state.authenticated = False
     st.rerun()
 
@@ -102,55 +203,112 @@ if st.sidebar.button("ログアウト"):
 df = load_data()
 
 # ---------------------------------------------------------------------------
+# ターミナル
+# ---------------------------------------------------------------------------
+
+if page == "ターミナル":
+
+    col_l, col_r = st.columns([1, 1], gap="large")
+
+    with col_l:
+        st.markdown("""
+<div style="padding: 2rem 0 1rem;">
+  <div id="oct-date" style="font-size:1rem;color:#555;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;"></div>
+  <div id="oct-time" style="font-size:4.5rem;font-weight:700;color:#FF8C00;font-family:monospace;letter-spacing:6px;line-height:1;"></div>
+</div>
+<script>
+(function() {
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick(){
+    var now = new Date();
+    var days=['日','月','火','水','木','金','土'];
+    var d = document.getElementById('oct-date');
+    var t = document.getElementById('oct-time');
+    if(d) d.textContent = days[now.getDay()]+'. '+now.getFullYear()+'/'+pad(now.getMonth()+1)+'/'+pad(now.getDate());
+    if(t) t.textContent = pad(now.getHours())+':'+pad(now.getMinutes())+':'+pad(now.getSeconds());
+  }
+  tick(); setInterval(tick, 1000);
+})();
+</script>
+""", unsafe_allow_html=True)
+
+        st.markdown("<div style='height:2rem;'></div>", unsafe_allow_html=True)
+
+        # Quick stats
+        if not df.empty:
+            monthly_target = int(st.secrets["app"].get("monthly_target", 10))
+            ordered_count = 0
+            if len(df.columns) >= 11:
+                ordered_count = int(df[df.columns[10]].astype(str).str.contains("受注", na=False).sum())
+            replied_count = 0
+            if len(df.columns) >= 9:
+                replied_count = int(df[df.columns[8]].astype(str).str.contains("返信あり", na=False).sum())
+
+            st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>QUICK STATS</div>", unsafe_allow_html=True)
+            sc1, sc2, sc3 = st.columns(3)
+            sc1.metric("顧客総数", len(df))
+            sc2.metric("返信あり", replied_count)
+            sc3.metric(f"受注 / 目標", f"{ordered_count} / {monthly_target}")
+
+    with col_r:
+        st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>MEMO</div>", unsafe_allow_html=True)
+
+        if "terminal_memo" not in st.session_state:
+            st.session_state.terminal_memo = ""
+
+        memo = st.text_area(
+            "",
+            value=st.session_state.terminal_memo,
+            placeholder="Take a note...",
+            height=280,
+            key="memo_input",
+            label_visibility="collapsed",
+        )
+        st.session_state.terminal_memo = memo
+
+# ---------------------------------------------------------------------------
 # Dashboard
 # ---------------------------------------------------------------------------
 
-if page == "ダッシュボード":
-    st.title("📊 ダッシュボード")
+elif page == "ダッシュボード":
+    st.title("DASHBOARD")
 
     if df.empty:
         st.info("スプレッドシートにデータがありません。")
         st.stop()
 
-    # --- 受注メトリクス ---
     monthly_target = int(st.secrets["app"].get("monthly_target", 10))
-
     ordered_count = 0
-    if len(df.columns) >= 10:
-        col_j = df.columns[9]
-        ordered_count = int(df[col_j].astype(str).str.contains("受注", na=False).sum())
-
+    if len(df.columns) >= 11:
+        col_k = df.columns[10]
+        ordered_count = int(df[col_k].astype(str).str.contains("受注", na=False).sum())
     achievement = ordered_count / monthly_target if monthly_target > 0 else 0
 
     c1, c2, c3 = st.columns(3)
     c1.metric("月間目標", f"{monthly_target} 件")
     c2.metric("受注数", f"{ordered_count} 件")
     c3.metric("達成率", f"{achievement:.0%}")
-
     st.progress(min(achievement, 1.0))
 
     st.divider()
 
-    # --- その他メトリクス ---
     c4, c5, c6 = st.columns(3)
     c4.metric("総顧客数", len(df))
 
     email_sent_col = next(
-        (c for c in df.columns if "メール" in c and any(k in c for k in ["済", "送信", "フラグ"])),
-        None,
+        (c for c in df.columns if "メール" in c and any(k in c for k in ["済", "送信", "フラグ"])), None,
     )
     if email_sent_col:
-        sent = df[email_sent_col].astype(str).str.contains(
-            r"済|✓|○|TRUE|1", case=False, na=False, regex=True
-        ).sum()
+        sent = df[email_sent_col].astype(str).str.contains(r"済|✓|○|TRUE|1", case=False, na=False, regex=True).sum()
         c5.metric("メール送信済み", int(sent))
 
     if len(df.columns) >= 9:
-        col_i = df.columns[8]
-        replied = df[col_i].astype(str).str.contains("返信あり", na=False).sum()
+        replied = df[df.columns[8]].astype(str).str.contains("返信あり", na=False).sum()
         c6.metric("返信あり", int(replied))
 
     if "業種" in df.columns:
+        st.divider()
         st.subheader("業種別件数")
         counts = df["業種"].value_counts().rename_axis("業種").reset_index(name="件数")
         st.bar_chart(counts.set_index("業種"))
@@ -160,28 +318,22 @@ if page == "ダッシュボード":
 # ---------------------------------------------------------------------------
 
 elif page == "顧客一覧":
-    st.title("👥 顧客一覧")
+    st.title("CUSTOMERS")
 
     if df.empty:
         st.info("データがありません。")
         st.stop()
 
-    # Filters
     col1, col2 = st.columns(2)
     search = col1.text_input("🔍 キーワード検索")
     selected_industry = "すべて"
     if "業種" in df.columns:
-        industry_values = sorted(
-            x for x in df["業種"].unique() if str(x).strip()
-        )
+        industry_values = sorted(x for x in df["業種"].unique() if str(x).strip())
         selected_industry = col2.selectbox("業種フィルタ", ["すべて"] + industry_values)
 
     filtered = df.copy()
     if search:
-        mask = filtered.apply(
-            lambda row: row.astype(str).str.contains(search, case=False, na=False).any(),
-            axis=1,
-        )
+        mask = filtered.apply(lambda row: row.astype(str).str.contains(search, case=False, na=False).any(), axis=1)
         filtered = filtered[mask]
     if selected_industry != "すべて" and "業種" in df.columns:
         filtered = filtered[filtered["業種"] == selected_industry]
@@ -189,9 +341,8 @@ elif page == "顧客一覧":
     st.caption(f"{len(filtered)} 件")
     st.dataframe(filtered, use_container_width=True)
 
-    # Edit / Delete / 返信あり
     st.divider()
-    st.subheader("✏️ 編集・削除")
+    st.subheader("EDIT / ACTION")
 
     if filtered.empty:
         st.info("該当するレコードがありません。")
@@ -203,12 +354,7 @@ elif page == "顧客一覧":
         for idx, row in filtered.iterrows()
     }
 
-    selected_idx = st.selectbox(
-        "レコードを選択",
-        list(option_labels.keys()),
-        format_func=lambda x: option_labels[x],
-    )
-
+    selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x])
     row_data = df.loc[selected_idx].to_dict()
 
     with st.form("edit_form"):
@@ -222,37 +368,26 @@ elif page == "顧客一覧":
     if save:
         with st.spinner("保存中..."):
             update_row(selected_idx, edited)
-        reload()
-        st.success("保存しました")
-        st.rerun()
-
+        reload(); st.success("保存しました"); st.rerun()
     if replied:
         with st.spinner("更新中..."):
             write_replied(selected_idx)
-        reload()
-        st.success("返信ありを記録しました")
-        st.rerun()
-
+        reload(); st.success("返信ありを記録しました"); st.rerun()
     if ordered:
         with st.spinner("更新中..."):
             write_ordered(selected_idx)
-        reload()
-        st.success("受注を記録しました")
-        st.rerun()
-
+        reload(); st.success("受注を記録しました"); st.rerun()
     if delete:
         with st.spinner("削除中..."):
             delete_row(selected_idx)
-        reload()
-        st.success("削除しました")
-        st.rerun()
+        reload(); st.success("削除しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
 # 見込み
 # ---------------------------------------------------------------------------
 
 elif page == "見込み":
-    st.title("⭐ 見込み顧客")
+    st.title("PROSPECTS")
 
     if df.empty:
         st.info("データがありません。")
@@ -273,46 +408,36 @@ elif page == "見込み":
 
     render_cards(mikomi)
 
-    # --- メモ編集 ---
     st.divider()
-    st.subheader("📝 見込みメモ編集（J列）")
+    st.subheader("MEMO  ( J列 )")
 
     label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
     memo_col  = df.columns[9] if len(df.columns) >= 10 else None
-
     option_labels = {
         idx: f"#{idx + 1}  {row[label_col]}" if label_col else f"#{idx + 1}"
         for idx, row in mikomi.iterrows()
     }
 
-    selected_idx = st.selectbox(
-        "顧客を選択",
-        list(option_labels.keys()),
-        format_func=lambda x: option_labels[x],
-        key="mikomi_select",
-    )
-
+    selected_idx = st.selectbox("顧客を選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="mikomi_select")
     current_memo = str(df.loc[selected_idx, memo_col]) if memo_col and memo_col in df.columns else ""
-    if current_memo == "nan":
+    if current_memo in ("nan", "None"):
         current_memo = ""
 
     with st.form("memo_form"):
-        new_memo = st.text_area("メモ（J列）", value=current_memo, key=f"memo_{selected_idx}")
+        new_memo = st.text_area("メモ", value=current_memo, placeholder="Take a note...", key=f"memo_{selected_idx}")
         save_memo = st.form_submit_button("💾 メモを保存", use_container_width=True, type="primary")
 
     if save_memo:
         with st.spinner("保存中..."):
             write_mikomi_memo(selected_idx, new_memo)
-        reload()
-        st.success("メモを保存しました")
-        st.rerun()
+        reload(); st.success("メモを保存しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
 # 受注リスト
 # ---------------------------------------------------------------------------
 
 elif page == "受注リスト":
-    st.title("🏆 受注リスト")
+    st.title("ORDERS")
 
     if df.empty:
         st.info("データがありません。")
