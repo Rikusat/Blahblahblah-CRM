@@ -397,6 +397,10 @@ elif page == "見込み":
         st.warning("I列（9列目）がスプレッドシートに存在しません。")
         st.stop()
 
+    if st.session_state.get("_last_page") != "見込み":
+        st.session_state["mikomi_editing_idx"] = None
+    st.session_state["_last_page"] = "見込み"
+
     col_i    = df.columns[8]
     memo_col = df.columns[9] if len(df.columns) >= 10 else None
     mikomi   = df[df[col_i].astype(str).str.contains("返信あり", na=False)]
