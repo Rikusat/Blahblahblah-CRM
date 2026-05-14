@@ -75,4 +75,10 @@ def write_replied(row_index: int) -> None:
 def write_ordered(row_index: int) -> None:
     ws = _get_worksheet()
     sheet_row = row_index + DATA_OFFSET
-    ws.update_cell(sheet_row, 10, "受注")  # Column J = 10
+    ws.update_cell(sheet_row, 11, "受注")  # Column K = 11
+
+
+def write_mikomi_memo(row_index: int, memo: str) -> None:
+    ws = _get_worksheet()
+    sheet_row = row_index + DATA_OFFSET
+    ws.update_cell(sheet_row, 10, memo)  # Column J = 10

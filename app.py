@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password
-from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered
+from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo
 
 st.set_page_config(page_title="Octail", page_icon="📊", layout="wide")
 
@@ -273,6 +273,40 @@ elif page == "見込み":
 
     render_cards(mikomi)
 
+    # --- メモ編集 ---
+    st.divider()
+    st.subheader("📝 見込みメモ編集（J列）")
+
+    label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
+    memo_col  = df.columns[9] if len(df.columns) >= 10 else None
+
+    option_labels = {
+        idx: f"#{idx + 1}  {row[label_col]}" if label_col else f"#{idx + 1}"
+        for idx, row in mikomi.iterrows()
+    }
+
+    selected_idx = st.selectbox(
+        "顧客を選択",
+        list(option_labels.keys()),
+        format_func=lambda x: option_labels[x],
+        key="mikomi_select",
+    )
+
+    current_memo = str(df.loc[selected_idx, memo_col]) if memo_col and memo_col in df.columns else ""
+    if current_memo == "nan":
+        current_memo = ""
+
+    with st.form("memo_form"):
+        new_memo = st.text_area("メモ（J列）", value=current_memo, key=f"memo_{selected_idx}")
+        save_memo = st.form_submit_button("💾 メモを保存", use_container_width=True, type="primary")
+
+    if save_memo:
+        with st.spinner("保存中..."):
+            write_mikomi_memo(selected_idx, new_memo)
+        reload()
+        st.success("メモを保存しました")
+        st.rerun()
+
 # ---------------------------------------------------------------------------
 # 受注リスト
 # ---------------------------------------------------------------------------
@@ -284,12 +318,12 @@ elif page == "受注リスト":
         st.info("データがありません。")
         st.stop()
 
-    if len(df.columns) < 10:
-        st.warning("J列（10列目）がスプレッドシートに存在しません。")
+    if len(df.columns) < 11:
+        st.warning("K列（11列目）がスプレッドシートに存在しません。")
         st.stop()
 
-    col_j = df.columns[9]
-    orders = df[df[col_j].astype(str).str.contains("受注", na=False)]
+    col_k = df.columns[10]
+    orders = df[df[col_k].astype(str).str.contains("受注", na=False)]
 
     st.caption(f"受注：{len(orders)} 件")
 
