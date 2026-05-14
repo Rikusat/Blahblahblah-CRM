@@ -431,7 +431,7 @@ elif page == "見込み":
     ts_col, _ = st.columns([1, 5])
     with ts_col:
         if st.button("📅 日付挿入", key="ts_btn", use_container_width=True):
-            ts = datetime.now().strftime("%Y/%m/%d  ")
+            ts = datetime.now().strftime("%Y/%m/%d  %H:%M  ")
             existing = st.session_state[memo_key]
             st.session_state[memo_key] = (existing + "\n" + ts).lstrip("\n")
             st.rerun()
