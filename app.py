@@ -84,7 +84,7 @@ def render_cards(df: pd.DataFrame):
 # ---------------------------------------------------------------------------
 
 st.sidebar.title("📊 Octail")
-page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "見込み", "新規登録"])
+page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "見込み", "受注リスト"])
 
 if st.sidebar.button("🔄 データ更新"):
     reload()
@@ -274,23 +274,27 @@ elif page == "見込み":
     render_cards(mikomi)
 
 # ---------------------------------------------------------------------------
-# New registration
+# 受注リスト
 # ---------------------------------------------------------------------------
 
-elif page == "新規登録":
-    st.title("➕ 新規登録")
+elif page == "受注リスト":
+    st.title("🏆 受注リスト")
 
     if df.empty:
-        st.info("スプレッドシートにヘッダー行が必要です。先にスプレッドシートに列名を設定してください。")
+        st.info("データがありません。")
         st.stop()
 
-    with st.form("add_form"):
-        new_data = render_fields(list(df.columns))
-        submitted = st.form_submit_button("登録", use_container_width=True, type="primary")
+    if len(df.columns) < 10:
+        st.warning("J列（10列目）がスプレッドシートに存在しません。")
+        st.stop()
 
-    if submitted:
-        with st.spinner("登録中..."):
-            add_row(new_data)
-        reload()
-        st.success("登録しました")
-        st.rerun()
+    col_j = df.columns[9]
+    orders = df[df[col_j].astype(str).str.contains("受注", na=False)]
+
+    st.caption(f"受注：{len(orders)} 件")
+
+    if orders.empty:
+        st.info("受注済みの顧客はまだいません。")
+        st.stop()
+
+    st.dataframe(orders, use_container_width=True)
