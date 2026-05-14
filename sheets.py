@@ -66,3 +66,9 @@ def delete_row(row_index: int) -> None:
     ws = _get_worksheet()
     sheet_row = row_index + 2  # 1-indexed + header offset
     ws.delete_rows(sheet_row)
+
+
+def write_replied(row_index: int) -> None:
+    ws = _get_worksheet()
+    sheet_row = row_index + 2  # 1-indexed + header offset
+    ws.update_cell(sheet_row, 9, "返信あり")  # Column I = 9

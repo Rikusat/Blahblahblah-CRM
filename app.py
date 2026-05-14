@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password
-from sheets import get_dataframe, update_row, add_row, delete_row
+from sheets import get_dataframe, update_row, add_row, delete_row, write_replied
 
 st.set_page_config(page_title="CRM", page_icon="📊", layout="wide")
 
@@ -14,7 +14,6 @@ if not check_password():
 # ---------------------------------------------------------------------------
 
 N_CARDS_PER_ROW = 3
-CARD_DISPLAY_LIMIT = 100
 TEXTAREA_KEYWORDS = {"備考", "メモ", "次回アクション", "notes", "memo", "コメント"}
 
 # ---------------------------------------------------------------------------
@@ -51,10 +50,6 @@ def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: 
     return values
 
 def render_cards(df: pd.DataFrame):
-    if len(df) > CARD_DISPLAY_LIMIT:
-        st.warning(f"件数が多いため最初の {CARD_DISPLAY_LIMIT} 件のみ表示しています。検索・フィルタで絞り込んでください。")
-        df = df.head(CARD_DISPLAY_LIMIT)
-
     name_col   = find_col(df, "事業所名", "会社名", "担当者名", "名前")
     ind_col    = find_col(df, "業種")
     person_col = find_col(df, "担当者名", "担当者名/代表者名", "代表者名")
@@ -89,7 +84,7 @@ def render_cards(df: pd.DataFrame):
 # ---------------------------------------------------------------------------
 
 st.sidebar.title("📊 CRM")
-page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "新規登録"])
+page = st.sidebar.radio("ページ", ["ダッシュボード", "顧客一覧", "見込み", "新規登録"])
 
 if st.sidebar.button("🔄 データ更新"):
     reload()
@@ -130,8 +125,10 @@ if page == "ダッシュボード":
         ).sum()
         c2.metric("メール送信済み", int(sent))
 
-    if "業種" in df.columns:
-        c3.metric("業種数", df["業種"].nunique())
+    if len(df.columns) >= 9:
+        col_i = df.columns[8]
+        replied = df[col_i].astype(str).str.contains("返信あり", na=False).sum()
+        c3.metric("返信あり", int(replied))
 
     if "業種" in df.columns:
         st.subheader("業種別件数")
@@ -168,17 +165,9 @@ elif page == "顧客一覧":
         filtered = filtered[filtered["業種"] == selected_industry]
 
     st.caption(f"{len(filtered)} 件")
+    st.dataframe(filtered, use_container_width=True)
 
-    # Display mode
-    view_mode = st.radio("表示形式", ["カード", "テーブル"], horizontal=True)
-    st.write("")
-
-    if view_mode == "カード":
-        render_cards(filtered)
-    else:
-        st.dataframe(filtered, use_container_width=True)
-
-    # Edit / Delete
+    # Edit / Delete / 返信あり
     st.divider()
     st.subheader("✏️ 編集・削除")
 
@@ -202,9 +191,10 @@ elif page == "顧客一覧":
 
     with st.form("edit_form"):
         edited = render_fields(list(df.columns), defaults=row_data, key_prefix=f"edit_{selected_idx}")
-        c1, c2 = st.columns(2)
-        save   = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
-        delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
+        c1, c2, c3 = st.columns(3)
+        save    = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
+        replied = c2.form_submit_button("📩 返信あり", use_container_width=True)
+        delete  = c3.form_submit_button("🗑️ 削除", use_container_width=True)
 
     if save:
         with st.spinner("保存中..."):
@@ -213,12 +203,45 @@ elif page == "顧客一覧":
         st.success("保存しました")
         st.rerun()
 
+    if replied:
+        with st.spinner("更新中..."):
+            write_replied(selected_idx)
+        reload()
+        st.success("返信ありを記録しました")
+        st.rerun()
+
     if delete:
         with st.spinner("削除中..."):
             delete_row(selected_idx)
         reload()
         st.success("削除しました")
         st.rerun()
+
+# ---------------------------------------------------------------------------
+# 見込み
+# ---------------------------------------------------------------------------
+
+elif page == "見込み":
+    st.title("⭐ 見込み顧客")
+
+    if df.empty:
+        st.info("データがありません。")
+        st.stop()
+
+    if len(df.columns) < 9:
+        st.warning("I列（9列目）がスプレッドシートに存在しません。")
+        st.stop()
+
+    col_i = df.columns[8]
+    mikomi = df[df[col_i].astype(str).str.contains("返信あり", na=False)]
+
+    st.caption(f"返信あり：{len(mikomi)} 件")
+
+    if mikomi.empty:
+        st.info("返信ありの顧客はまだいません。")
+        st.stop()
+
+    render_cards(mikomi)
 
 # ---------------------------------------------------------------------------
 # New registration
