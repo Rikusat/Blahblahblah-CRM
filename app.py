@@ -151,8 +151,10 @@ elif page == "顧客一覧":
     search = col1.text_input("🔍 キーワード検索")
     selected_industry = "すべて"
     if "業種" in df.columns:
-        industries = ["すべて"] + sorted(df["業種"].dropna().unique().tolist())
-        selected_industry = col2.selectbox("業種フィルタ", industries)
+        industry_values = sorted(
+            x for x in df["業種"].unique() if str(x).strip()
+        )
+        selected_industry = col2.selectbox("業種フィルタ", ["すべて"] + industry_values)
 
     filtered = df.copy()
     if search:
