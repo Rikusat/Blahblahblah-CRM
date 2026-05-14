@@ -255,17 +255,15 @@ if page == "ターミナル":
         st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>MEMO</div>", unsafe_allow_html=True)
 
         if "terminal_memo" not in st.session_state:
-            st.session_state.terminal_memo = ""
+            st.session_state["terminal_memo"] = ""
 
-        memo = st.text_area(
+        st.text_area(
             "",
-            value=st.session_state.terminal_memo,
             placeholder="Take a note...",
             height=280,
-            key="memo_input",
+            key="terminal_memo",
             label_visibility="collapsed",
         )
-        st.session_state.terminal_memo = memo
 
 # ---------------------------------------------------------------------------
 # Dashboard
@@ -419,17 +417,30 @@ elif page == "見込み":
     }
 
     selected_idx = st.selectbox("顧客を選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="mikomi_select")
+
     current_memo = str(df.loc[selected_idx, memo_col]) if memo_col and memo_col in df.columns else ""
     if current_memo in ("nan", "None"):
         current_memo = ""
 
-    with st.form("memo_form"):
-        new_memo = st.text_area("メモ", value=current_memo, placeholder="Take a note...", key=f"memo_{selected_idx}")
-        save_memo = st.form_submit_button("💾 メモを保存", use_container_width=True, type="primary")
+    memo_key = f"mikomi_memo_{selected_idx}"
+    if memo_key not in st.session_state:
+        st.session_state[memo_key] = current_memo
 
-    if save_memo:
+    # Timestamp button
+    from datetime import datetime
+    ts_col, _ = st.columns([1, 5])
+    with ts_col:
+        if st.button("📅 日付挿入", key="ts_btn", use_container_width=True):
+            ts = datetime.now().strftime("%Y/%m/%d  ")
+            existing = st.session_state[memo_key]
+            st.session_state[memo_key] = (existing + "\n" + ts).lstrip("\n")
+            st.rerun()
+
+    st.text_area("メモ", placeholder="Take a note...", key=memo_key, height=200)
+
+    if st.button("💾 メモを保存", type="primary", use_container_width=True, key="save_memo_btn"):
         with st.spinner("保存中..."):
-            write_mikomi_memo(selected_idx, new_memo)
+            write_mikomi_memo(selected_idx, st.session_state[memo_key])
         reload(); st.success("メモを保存しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
