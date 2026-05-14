@@ -70,3 +70,9 @@ def write_replied(row_index: int) -> None:
     ws = _get_worksheet()
     sheet_row = row_index + DATA_OFFSET
     ws.update_cell(sheet_row, 9, "返信あり")  # Column I = 9
+
+
+def write_ordered(row_index: int) -> None:
+    ws = _get_worksheet()
+    sheet_row = row_index + DATA_OFFSET
+    ws.update_cell(sheet_row, 10, "受注")  # Column J = 10

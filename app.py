@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password
-from sheets import get_dataframe, update_row, add_row, delete_row, write_replied
+from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered
 
 st.set_page_config(page_title="Octail", page_icon="📊", layout="wide")
 
@@ -112,8 +112,28 @@ if page == "ダッシュボード":
         st.info("スプレッドシートにデータがありません。")
         st.stop()
 
+    # --- 受注メトリクス ---
+    monthly_target = int(st.secrets["app"].get("monthly_target", 10))
+
+    ordered_count = 0
+    if len(df.columns) >= 10:
+        col_j = df.columns[9]
+        ordered_count = int(df[col_j].astype(str).str.contains("受注", na=False).sum())
+
+    achievement = ordered_count / monthly_target if monthly_target > 0 else 0
+
     c1, c2, c3 = st.columns(3)
-    c1.metric("総顧客数", len(df))
+    c1.metric("月間目標", f"{monthly_target} 件")
+    c2.metric("受注数", f"{ordered_count} 件")
+    c3.metric("達成率", f"{achievement:.0%}")
+
+    st.progress(min(achievement, 1.0))
+
+    st.divider()
+
+    # --- その他メトリクス ---
+    c4, c5, c6 = st.columns(3)
+    c4.metric("総顧客数", len(df))
 
     email_sent_col = next(
         (c for c in df.columns if "メール" in c and any(k in c for k in ["済", "送信", "フラグ"])),
@@ -123,12 +143,12 @@ if page == "ダッシュボード":
         sent = df[email_sent_col].astype(str).str.contains(
             r"済|✓|○|TRUE|1", case=False, na=False, regex=True
         ).sum()
-        c2.metric("メール送信済み", int(sent))
+        c5.metric("メール送信済み", int(sent))
 
     if len(df.columns) >= 9:
         col_i = df.columns[8]
         replied = df[col_i].astype(str).str.contains("返信あり", na=False).sum()
-        c3.metric("返信あり", int(replied))
+        c6.metric("返信あり", int(replied))
 
     if "業種" in df.columns:
         st.subheader("業種別件数")
@@ -193,10 +213,11 @@ elif page == "顧客一覧":
 
     with st.form("edit_form"):
         edited = render_fields(list(df.columns), defaults=row_data, key_prefix=f"edit_{selected_idx}")
-        c1, c2, c3 = st.columns(3)
-        save    = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
+        c1, c2, c3, c4 = st.columns(4)
+        save    = c1.form_submit_button("💾 保存",    use_container_width=True, type="primary")
         replied = c2.form_submit_button("📩 返信あり", use_container_width=True)
-        delete  = c3.form_submit_button("🗑️ 削除", use_container_width=True)
+        ordered = c3.form_submit_button("🏆 受注",    use_container_width=True)
+        delete  = c4.form_submit_button("🗑️ 削除",   use_container_width=True)
 
     if save:
         with st.spinner("保存中..."):
@@ -210,6 +231,13 @@ elif page == "顧客一覧":
             write_replied(selected_idx)
         reload()
         st.success("返信ありを記録しました")
+        st.rerun()
+
+    if ordered:
+        with st.spinner("更新中..."):
+            write_ordered(selected_idx)
+        reload()
+        st.success("受注を記録しました")
         st.rerun()
 
     if delete:
