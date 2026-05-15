@@ -32,8 +32,9 @@ def _get_worksheet() -> gspread.Worksheet:
     return spreadsheet.worksheet(st.secrets["sheets"]["worksheet_name"])
 
 
-def _col_index(ws: gspread.Worksheet, col_name: str) -> int:
-    return ws.row_values(HEADER_ROW).index(col_name) + 1
+def _col_index(ws: gspread.Worksheet, col_name: str) -> int | None:
+    headers = ws.row_values(HEADER_ROW)
+    return headers.index(col_name) + 1 if col_name in headers else None
 
 
 def get_dataframe() -> pd.DataFrame:
@@ -105,51 +106,55 @@ def archive_and_delete_row(row_index: int) -> None:
     ws.delete_rows(row_index)
 
 
+def _safe_update(ws: gspread.Worksheet, row_index: int, col_name: str, value: str) -> bool:
+    col = _col_index(ws, col_name)
+    if col is None:
+        return False
+    ws.update_cell(row_index, col, value)
+    return True
+
+
 def write_replied(row_index: int, value: str = "返信あり") -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_REPLIED), value)
+    _safe_update(ws, row_index, COL_REPLIED, value)
 
 
 def write_ordered(row_index: int) -> None:
     from datetime import datetime
     ws = _get_worksheet()
-    ts = datetime.now().strftime("%Y/%m/%d %H:%M")
-    ws.update_cell(row_index, _col_index(ws, COL_ORDERED), ts)
+    _safe_update(ws, row_index, COL_ORDERED, datetime.now().strftime("%Y/%m/%d %H:%M"))
 
 
 def write_memo(row_index: int, memo: str) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_MEMO), memo)
+    _safe_update(ws, row_index, COL_MEMO, memo)
 
 
 def write_fields(row_index: int, data: dict) -> None:
     ws = _get_worksheet()
-    headers = ws.row_values(HEADER_ROW)
     for col_name, value in data.items():
-        if col_name in headers:
-            ws.update_cell(row_index, headers.index(col_name) + 1, value)
+        _safe_update(ws, row_index, col_name, value)
 
 
 def write_claim(row_index: int) -> None:
     from datetime import datetime
     ws = _get_worksheet()
-    ts = datetime.now().strftime("%Y/%m/%d %H:%M")
-    ws.update_cell(row_index, _col_index(ws, COL_CLAIM), ts)
+    _safe_update(ws, row_index, COL_CLAIM, datetime.now().strftime("%Y/%m/%d %H:%M"))
 
 
 def write_claim_done(row_index: int, value: str) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_CLAIM_DONE), value)
+    _safe_update(ws, row_index, COL_CLAIM_DONE, value)
 
 
 def write_claim_content(row_index: int, content: str) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_CLAIM_CONTENT), content)
+    _safe_update(ws, row_index, COL_CLAIM_CONTENT, content)
 
 
 def write_claim_note(row_index: int, note: str) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_CLAIM_NOTE), note)
+    _safe_update(ws, row_index, COL_CLAIM_NOTE, note)
 
 
 def _get_board_ws() -> gspread.Worksheet:
