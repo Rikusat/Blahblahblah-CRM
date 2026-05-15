@@ -630,6 +630,9 @@ elif page == "見込み":
                 replied_val = str(row[COL_REPLIED]).strip() if COL_REPLIED in row.index else ""
                 if replied_val and replied_val not in ("nan", "None"):
                     st.caption(f"📌 {replied_val}")
+                claim_val = str(row[COL_CLAIM]).strip() if COL_CLAIM in row.index else ""
+                if claim_val and claim_val not in ("nan", "None"):
+                    st.caption(f"⚠️ クレーム日時：{claim_val}")
                 if ind_col:
                     st.caption(f"🏢 {row[ind_col]}")
                 if person_col and person_col != name_col:
