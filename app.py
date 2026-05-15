@@ -4,9 +4,11 @@ import pandas as pd
 from auth import check_password, logout
 from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
-    write_replied, write_ordered, write_memo, write_claim, write_claim_done, write_claim_note,
+    write_replied, write_ordered, write_memo,
+    write_claim, write_claim_done, write_claim_content, write_claim_note,
     get_board, set_board,
-    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO, COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_NOTE,
+    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
+    COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE,
 )
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
@@ -727,6 +729,19 @@ elif page == "クレーム":
                     st.markdown(f"🔗 [{url}]({url})")
 
                 st.markdown("<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;'></div>", unsafe_allow_html=True)
+
+                # クレーム内容
+                if COL_CLAIM_CONTENT in row.index:
+                    current_content = str(row[COL_CLAIM_CONTENT])
+                    if current_content in ("nan", "None"):
+                        current_content = ""
+                    content_key = f"claim_content_{idx}"
+                    st.text_area("クレーム内容", value=current_content, key=content_key, height=80,
+                                 placeholder="クレーム内容を入力...", label_visibility="visible")
+                    if st.button("💾 内容保存", key=f"claim_content_save_{idx}", use_container_width=True):
+                        with st.spinner("保存中..."):
+                            write_claim_content(idx, st.session_state[content_key])
+                        reload(); st.success("保存しました"); st.rerun()
 
                 # 対応済みチェックボックス
                 current_done = str(row.get(COL_CLAIM_DONE, "")) == "対応済み" if COL_CLAIM_DONE in row.index else False
