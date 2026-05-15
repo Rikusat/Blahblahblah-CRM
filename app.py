@@ -120,7 +120,6 @@ elif "admin_mode" not in st.session_state:
 # ---------------------------------------------------------------------------
 
 N_CARDS_PER_ROW = 3
-TEXTAREA_KEYWORDS = {"備考", "メモ", "次回アクション", "notes", "memo", "コメント"}
 
 # ---------------------------------------------------------------------------
 # Data
@@ -151,7 +150,23 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
             return c
     return None
 
-SELECT_OPTIONS: dict[str, list[str]] = load_select_options()
+# 設定シートから全設定を読み込み、アプリ設定キーとフォーム選択肢に分離
+_APP_CONFIG_KEYS = {"月間目標", "テキストエリア列"}
+_raw_settings: dict[str, list[str]] = load_select_options()
+
+SELECT_OPTIONS: dict[str, list[str]] = {
+    k: v for k, v in _raw_settings.items() if k not in _APP_CONFIG_KEYS
+}
+TEXTAREA_KEYWORDS: set[str] = (
+    set(_raw_settings["テキストエリア列"][1:])
+    if "テキストエリア列" in _raw_settings
+    else {"備考", "メモ", "次回アクション", "notes", "memo", "コメント"}
+)
+_MONTHLY_TARGET: int = (
+    int(_raw_settings["月間目標"][1])
+    if "月間目標" in _raw_settings and len(_raw_settings["月間目標"]) > 1
+    else int(st.secrets["app"].get("monthly_target", 10))
+)
 
 def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
     values = {}
@@ -274,7 +289,7 @@ if page == "ターミナル":
 
         # Quick stats
         if not df.empty:
-            monthly_target = int(st.secrets["app"].get("monthly_target", 10))
+            monthly_target = _MONTHLY_TARGET
             ordered_count = 0
             if COL_ORDERED in df.columns:
                 ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
@@ -399,7 +414,7 @@ elif page == "ダッシュボード":
         st.info("スプレッドシートにデータがありません。")
         st.stop()
 
-    monthly_target = int(st.secrets["app"].get("monthly_target", 10))
+    monthly_target = _MONTHLY_TARGET
     ordered_count = 0
     if COL_ORDERED in df.columns:
         ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
@@ -558,14 +573,9 @@ elif page.startswith("顧客一覧"):
 
         if st.session_state.get("reply_selecting") == selected_idx:
             st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
-            rc1, rc2, rc3, rc4, rc5 = st.columns(5)
-            for col, label, value in [
-                (rc1, "見込みC", "見込みC"),
-                (rc2, "見込みB", "見込みB"),
-                (rc3, "見込みA", "見込みA"),
-                (rc4, "⚠️ クレーム", None),
-                (rc5, "✕", "cancel"),
-            ]:
+            _reply_opts = [v for v in SELECT_OPTIONS.get(COL_REPLIED, []) if v]
+            _reply_items = [(opt, opt) for opt in _reply_opts] + [("⚠️ クレーム", None), ("✕", "cancel")]
+            for col, (label, value) in zip(st.columns(len(_reply_items)), _reply_items):
                 with col:
                     if st.button(label, use_container_width=True, key=f"reply_opt_{value}_{selected_idx}"):
                         if value == "cancel":
