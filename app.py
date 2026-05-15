@@ -4,9 +4,9 @@ import pandas as pd
 from auth import check_password, logout
 from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
-    write_replied, write_ordered, write_memo,
+    write_replied, write_ordered, write_memo, write_claim,
     get_board, set_board,
-    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
+    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO, COL_CLAIM,
 )
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
@@ -208,7 +208,7 @@ st.sidebar.markdown(
 st.sidebar.markdown("<div style='color:#adadad;font-size:0.65rem;font-family:monospace;letter-spacing:2px;margin-bottom:1rem;'>CRM SYSTEM</div>", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
-    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト"],
+    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト", "クレーム"],
     label_visibility="collapsed",
 )
 
@@ -514,7 +514,7 @@ elif page == "顧客一覧":
     else:
         st.caption("🔒 編集・削除は管理者モードで行えます")
 
-    b1, b2 = st.columns(2)
+    b1, b2, b3 = st.columns(3)
     with b1:
         if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
             with st.spinner("更新中..."):
@@ -525,6 +525,11 @@ elif page == "顧客一覧":
             with st.spinner("更新中..."):
                 write_ordered(selected_idx)
             reload(); st.success("受注を記録しました"); st.rerun()
+    with b3:
+        if st.button("⚠️ クレーム", use_container_width=True, key="btn_claim"):
+            with st.spinner("更新中..."):
+                write_claim(selected_idx)
+            reload(); st.success("クレームを記録しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
 # 見込み
@@ -672,3 +677,28 @@ elif page == "受注リスト":
         st.stop()
 
     st.dataframe(orders, use_container_width=True)
+
+# ---------------------------------------------------------------------------
+# クレーム
+# ---------------------------------------------------------------------------
+
+elif page == "クレーム":
+    st.title("CLAIMS")
+
+    if df.empty:
+        st.info("データがありません。")
+        st.stop()
+
+    if COL_CLAIM not in df.columns:
+        st.warning(f"「{COL_CLAIM}」列がスプレッドシートに存在しません。")
+        st.stop()
+
+    claims = df[df[COL_CLAIM].astype(str).str.contains("クレーム", na=False)]
+
+    st.caption(f"クレーム：{len(claims)} 件")
+
+    if claims.empty:
+        st.info("クレームの顧客はいません。")
+        st.stop()
+
+    st.dataframe(claims, use_container_width=True)
