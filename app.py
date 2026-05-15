@@ -6,7 +6,7 @@ from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
     write_replied, write_ordered, write_memo,
     write_claim, write_claim_done, write_claim_content, write_claim_note,
-    get_board, set_board,
+    get_board, set_board, get_select_options,
     DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
     COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE,
 )
@@ -134,6 +134,10 @@ def load_data() -> pd.DataFrame:
 def load_board_data(board_type: str) -> dict:
     return get_board(board_type)
 
+@st.cache_data(ttl=300)
+def load_select_options() -> dict:
+    return get_select_options()
+
 def reload():
     st.cache_data.clear()
 
@@ -147,13 +151,7 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
             return c
     return None
 
-SELECT_OPTIONS: dict[str, list[str]] = {
-    COL_REPLIED: ["", "見込みC", "見込みB", "見込みA"],
-    COL_ORDERED: ["", "受注"],
-    "受注商品": ["", "商品X", "商品Y", "商品Z"],
-    "メール済か": ["", "済み"],
-    "メール": ["", "済み"],
-}
+SELECT_OPTIONS: dict[str, list[str]] = load_select_options()
 
 def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
     values = {}

@@ -177,3 +177,24 @@ def set_board(board_type: str, content: str, color: str, size: str) -> None:
             ws.update(f"B{i}:D{i}", [[content, color, size]])
             return
     ws.append_row([board_type, content, color, size])
+
+
+def get_select_options() -> dict[str, list[str]]:
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=SCOPES
+    )
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(st.secrets["sheets"]["spreadsheet_id"])
+    try:
+        ws = sh.worksheet("設定")
+    except gspread.WorksheetNotFound:
+        return {}
+    result = {}
+    for row in ws.get_all_values():
+        if not row or not row[0].strip():
+            continue
+        col_name = row[0].strip()
+        options = [v.strip() for v in row[1:] if v.strip()]
+        if options:
+            result[col_name] = [""] + options
+    return result
