@@ -499,7 +499,7 @@ elif page == "見込み":
                             unsafe_allow_html=True,
                         )
 
-                if st.button("✏️ 編集", key=f"mikomi_edit_{idx}", use_container_width=True):
+                if st.button("📝 メモ", key=f"mikomi_edit_{idx}", use_container_width=True):
                     st.session_state["mikomi_editing_idx"] = idx
                     st.rerun()
 
