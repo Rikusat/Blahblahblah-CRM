@@ -378,6 +378,18 @@ elif page == "顧客一覧":
             delete_row(selected_idx)
         reload(); st.success("削除しました"); st.rerun()
 
+    b1, b2 = st.columns(2)
+    with b1:
+        if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
+            with st.spinner("更新中..."):
+                write_replied(selected_idx)
+            reload(); st.success("返信ありを記録しました"); st.rerun()
+    with b2:
+        if st.button("🏆 受注", use_container_width=True, key="btn_ordered"):
+            with st.spinner("更新中..."):
+                write_ordered(selected_idx)
+            reload(); st.success("受注を記録しました"); st.rerun()
+
 # ---------------------------------------------------------------------------
 # 見込み
 # ---------------------------------------------------------------------------
