@@ -8,8 +8,8 @@ SCOPES = [
     "https://www.googleapis.com/auth/drive",
 ]
 
-HEADER_ROW = 3   # 3行目がカラム名
-DATA_OFFSET = 4  # データはシートの4行目から（DataFrame index 0 = sheet row 4）
+HEADER_ROW = 1   # 1行目がカラム名
+DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index 0 = sheet row 2）
 
 
 def _get_worksheet() -> gspread.Worksheet:
