@@ -2,7 +2,12 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password, logout
-from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo, get_board, set_board, DATA_OFFSET
+from sheets import (
+    get_dataframe, update_row, add_row, delete_row,
+    write_replied, write_ordered, write_memo,
+    get_board, set_board,
+    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
+)
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
 
@@ -82,7 +87,6 @@ hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
 
 /* ── Caption / small text ── */
 .stCaption p { color: #b4b4b4 !important; font-family: monospace !important; font-size: 0.75rem !important; }
-
 
 /* ── Radio ── */
 .stRadio > div { gap: 0.4rem; }
@@ -256,11 +260,11 @@ if page == "ターミナル":
         if not df.empty:
             monthly_target = int(st.secrets["app"].get("monthly_target", 10))
             ordered_count = 0
-            if len(df.columns) >= 11:
-                ordered_count = int(df[df.columns[10]].astype(str).str.contains("受注", na=False).sum())
+            if COL_ORDERED in df.columns:
+                ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
             replied_count = 0
-            if len(df.columns) >= 9:
-                replied_count = int(df[df.columns[8]].astype(str).str.contains("返信あり", na=False).sum())
+            if COL_REPLIED in df.columns:
+                replied_count = int(df[COL_REPLIED].astype(str).str.contains("返信あり", na=False).sum())
 
             st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>QUICK STATS</div>", unsafe_allow_html=True)
             sc1, sc2, sc3 = st.columns(3)
@@ -381,9 +385,8 @@ elif page == "ダッシュボード":
 
     monthly_target = int(st.secrets["app"].get("monthly_target", 10))
     ordered_count = 0
-    if len(df.columns) >= 11:
-        col_k = df.columns[10]
-        ordered_count = int(df[col_k].astype(str).str.contains("受注", na=False).sum())
+    if COL_ORDERED in df.columns:
+        ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
     achievement = ordered_count / monthly_target if monthly_target > 0 else 0
 
     gauge_color = "#2FFFB4" if achievement >= 1.0 else "#EC2D01"
@@ -410,8 +413,8 @@ elif page == "ダッシュボード":
         sent = df[email_sent_col].astype(str).str.contains(r"済|✓|○|TRUE|1", case=False, na=False, regex=True).sum()
         c5.metric("メール送信済み", int(sent))
 
-    if len(df.columns) >= 9:
-        replied = df[df.columns[8]].astype(str).str.contains("返信あり", na=False).sum()
+    if COL_REPLIED in df.columns:
+        replied = df[COL_REPLIED].astype(str).str.contains("返信あり", na=False).sum()
         c6.metric("返信あり", int(replied))
 
     if "業種" in df.columns:
@@ -464,13 +467,13 @@ elif page == "顧客一覧":
     selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="customer_select")
     row_data = df.loc[selected_idx].to_dict()
 
-    # メール有無（A列）・返信あり（I列）・受注（K列）はボタン管理のため編集フォームから除外
-    EXCLUDE_COLS = {df.columns[0]} | (
-        {df.columns[8]}  if len(df.columns) > 8  else set()
-    ) | (
-        {df.columns[10]} if len(df.columns) > 10 else set()
-    )
-    edit_cols = [c for c in df.columns if c not in EXCLUDE_COLS]
+    # 先頭列・返信あり・受注有無 はボタン管理のため編集フォームから除外
+    exclude = {df.columns[0]}
+    if COL_REPLIED in df.columns:
+        exclude.add(COL_REPLIED)
+    if COL_ORDERED in df.columns:
+        exclude.add(COL_ORDERED)
+    edit_cols = [c for c in df.columns if c not in exclude]
 
     if st.session_state.get("admin_mode"):
         with st.form("edit_form"):
@@ -515,17 +518,16 @@ elif page == "見込み":
         st.info("データがありません。")
         st.stop()
 
-    if len(df.columns) < 9:
-        st.warning("I列（9列目）がスプレッドシートに存在しません。")
+    if COL_REPLIED not in df.columns:
+        st.warning(f"「{COL_REPLIED}」列がスプレッドシートに存在しません。")
         st.stop()
 
     if st.session_state.get("_last_page") != "見込み":
         st.session_state["mikomi_editing_idx"] = None
     st.session_state["_last_page"] = "見込み"
 
-    col_i    = df.columns[8]
-    memo_col = df.columns[9] if len(df.columns) >= 10 else None
-    mikomi   = df[df[col_i].astype(str).str.contains("返信あり", na=False)]
+    memo_col = COL_MEMO if COL_MEMO in df.columns else None
+    mikomi   = df[df[COL_REPLIED].astype(str).str.contains("返信あり", na=False)]
 
     st.caption(f"返信あり：{len(mikomi)} 件")
 
@@ -533,7 +535,6 @@ elif page == "見込み":
         st.info("返信ありの顧客はまだいません。")
         st.stop()
 
-    # --- カード表示（メモ + 編集ボタン付き）---
     name_col   = find_col(mikomi, "事業所名", "会社名", "担当者名", "名前")
     ind_col    = find_col(mikomi, "業種")
     person_col = find_col(mikomi, "担当者名", "担当者名/代表者名", "代表者名")
@@ -559,7 +560,7 @@ elif page == "見込み":
                     url = str(row[url_col]).strip()
                     st.markdown(f"🔗 [{url}]({url})")
 
-                # J列メモ表示
+                # 連携メモ表示
                 is_expanded = st.session_state.get(f"mikomi_open_{idx}", False)
                 if memo_col and memo_col in row.index:
                     memo_val = str(row[memo_col])
@@ -585,14 +586,14 @@ elif page == "見込み":
                     st.session_state["mikomi_editing_idx"] = idx
                     st.rerun()
 
-    # --- 編集フォーム（編集ボタン押下後に表示）---
+    # --- 編集フォーム ---
     editing_idx = st.session_state.get("mikomi_editing_idx")
     if editing_idx is not None and editing_idx in mikomi.index:
         st.divider()
-        st.subheader("MEMO  ( J列 )")
+        st.subheader(f"MEMO  ( {COL_MEMO} )")
 
-        label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
-        label = f"#{editing_idx}  {mikomi.loc[editing_idx, label_col]}" if label_col else f"#{editing_idx}"
+        label_col_e = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
+        label = f"#{editing_idx}  {mikomi.loc[editing_idx, label_col_e]}" if label_col_e else f"#{editing_idx}"
         st.caption(f"編集中：{label}")
 
         current_memo = str(df.loc[editing_idx, memo_col]) if memo_col else ""
@@ -617,7 +618,7 @@ elif page == "見込み":
         with sv_col:
             if st.button("💾 保存", type="primary", use_container_width=True, key="save_memo_btn"):
                 with st.spinner("保存中..."):
-                    write_mikomi_memo(editing_idx, st.session_state[memo_key])
+                    write_memo(editing_idx, st.session_state[memo_key])
                 reload()
                 st.success("メモを保存しました")
                 st.rerun()
@@ -637,12 +638,11 @@ elif page == "受注リスト":
         st.info("データがありません。")
         st.stop()
 
-    if len(df.columns) < 11:
-        st.warning("K列（11列目）がスプレッドシートに存在しません。")
+    if COL_ORDERED not in df.columns:
+        st.warning(f"「{COL_ORDERED}」列がスプレッドシートに存在しません。")
         st.stop()
 
-    col_k = df.columns[10]
-    orders = df[df[col_k].astype(str).str.contains("受注", na=False)]
+    orders = df[df[COL_ORDERED].astype(str).str.contains("受注", na=False)]
 
     st.caption(f"受注：{len(orders)} 件")
 

@@ -9,7 +9,11 @@ SCOPES = [
 ]
 
 HEADER_ROW = 1   # 1行目がカラム名
-DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index 0 = sheet row 2）
+DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = sheet row番号）
+
+COL_REPLIED = "返信あり"
+COL_ORDERED = "受注有無"
+COL_MEMO    = "連携メモ"
 
 
 def _get_worksheet() -> gspread.Worksheet:
@@ -21,6 +25,10 @@ def _get_worksheet() -> gspread.Worksheet:
     return spreadsheet.worksheet(st.secrets["sheets"]["worksheet_name"])
 
 
+def _col_index(ws: gspread.Worksheet, col_name: str) -> int:
+    return ws.row_values(HEADER_ROW).index(col_name) + 1
+
+
 def get_dataframe() -> pd.DataFrame:
     ws = _get_worksheet()
     values = ws.get_all_values()
@@ -30,7 +38,7 @@ def get_dataframe() -> pd.DataFrame:
     if len(values) <= HEADER_ROW:
         return pd.DataFrame(columns=headers)
     df = pd.DataFrame(values[HEADER_ROW:], columns=headers)
-    df.index = range(DATA_OFFSET, DATA_OFFSET + len(df))  # index = sheet row番号
+    df.index = range(DATA_OFFSET, DATA_OFFSET + len(df))
     return df
 
 
@@ -68,17 +76,17 @@ def delete_row(row_index: int) -> None:
 
 def write_replied(row_index: int) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, 9, "返信あり")  # Column I = 9
+    ws.update_cell(row_index, _col_index(ws, COL_REPLIED), "返信あり")
 
 
 def write_ordered(row_index: int) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, 11, "受注")  # Column K = 11
+    ws.update_cell(row_index, _col_index(ws, COL_ORDERED), "受注")
 
 
-def write_mikomi_memo(row_index: int, memo: str) -> None:
+def write_memo(row_index: int, memo: str) -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, 10, memo)  # Column J = 10
+    ws.update_cell(row_index, _col_index(ws, COL_MEMO), memo)
 
 
 def _get_board_ws() -> gspread.Worksheet:
