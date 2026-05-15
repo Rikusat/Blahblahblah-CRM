@@ -664,11 +664,6 @@ elif page == "見込み":
     url_col         = find_col(mikomi, "URL", "url", "ウェブサイト")
     next_action_col = "次回アクション" if "次回アクション" in mikomi.columns else None
 
-    with st.expander("🐛 DEBUG"):
-        st.write([c for c in mikomi.columns if "アクション" in c or "次回" in c])
-        st.write(f"next_action_col={next_action_col}")
-        if next_action_col:
-            st.write(mikomi[[next_action_col]].head(3))
 
     cols = st.columns(N_CARDS_PER_ROW, gap="small")
     for n_row, (idx, row) in enumerate(mikomi.iterrows()):
