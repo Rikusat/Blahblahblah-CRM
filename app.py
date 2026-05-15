@@ -12,22 +12,8 @@ st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
 
 st.markdown("""
 <style>
-#MainMenu, footer { visibility: hidden; }
-[data-testid="stToolbar"] { visibility: hidden; }
-[data-testid="stDecoration"] { display: none; }
-[data-testid="stSidebarCollapsedControl"] {
-    visibility: visible !important;
-    display: flex !important;
-    background: #111 !important;
-    border: 1px solid #2a2a2a !important;
-    border-radius: 0 6px 6px 0 !important;
-}
-[data-testid="stSidebarCollapsedControl"] button {
-    color: #FF8C00 !important;
-}
-[data-testid="stSidebarCollapsedControl"] svg {
-    fill: #FF8C00 !important;
-}
+#MainMenu, footer, header { visibility: hidden; }
+[data-testid="stSidebarCollapseButton"] { display: none !important; }
 
 /* ── Base ── */
 .stApp { background-color: #0d0d0d; }
