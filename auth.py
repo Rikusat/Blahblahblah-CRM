@@ -1,20 +1,19 @@
 import streamlit as st
-import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 
 COOKIE_NAME = "octail_auth"
 COOKIE_EXPIRY_DAYS = 1
 
 
-@st.cache_resource
-def _cookie_manager():
-    return stx.CookieManager(key="octail_cookie_mgr")
+def _get_controller():
+    from streamlit_cookies_controller import CookieController
+    return CookieController()
 
 
 def check_password() -> bool:
-    cm = _cookie_manager()
+    ctrl = _get_controller()
 
-    if st.session_state.get("authenticated") or cm.get(COOKIE_NAME) == "ok":
+    if st.session_state.get("authenticated") or ctrl.get(COOKIE_NAME) == "ok":
         st.session_state.authenticated = True
         return True
 
@@ -24,7 +23,7 @@ def check_password() -> bool:
     if st.button("ログイン"):
         if password == st.secrets["app"]["password"]:
             st.session_state.authenticated = True
-            cm.set(COOKIE_NAME, "ok", expires=datetime.now() + timedelta(days=COOKIE_EXPIRY_DAYS))
+            ctrl.set(COOKIE_NAME, "ok")
             st.rerun()
         else:
             st.error("パスワードが違います")
@@ -33,6 +32,6 @@ def check_password() -> bool:
 
 
 def logout():
-    cm = _cookie_manager()
+    ctrl = _get_controller()
     st.session_state.authenticated = False
-    cm.delete(COOKIE_NAME)
+    ctrl.remove(COOKIE_NAME)
