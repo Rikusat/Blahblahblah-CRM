@@ -1,3 +1,6 @@
+import csv
+import os
+
 import gspread
 import pandas as pd
 import streamlit as st
@@ -179,6 +182,14 @@ def set_board(board_type: str, content: str, color: str, size: str) -> None:
     ws.append_row([board_type, content, color, size])
 
 
+def _load_default_settings() -> list[list[str]]:
+    path = os.path.join(os.path.dirname(__file__), "settings_default.csv")
+    if not os.path.exists(path):
+        return []
+    with open(path, encoding="utf-8") as f:
+        return [row for row in csv.reader(f) if row]
+
+
 def get_select_options() -> dict[str, list[str]]:
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
@@ -188,7 +199,10 @@ def get_select_options() -> dict[str, list[str]]:
     try:
         ws = sh.worksheet("設定")
     except gspread.WorksheetNotFound:
-        return {}
+        defaults = _load_default_settings()
+        ws = sh.add_worksheet(title="設定", rows=max(50, len(defaults) + 10), cols=20)
+        if defaults:
+            ws.update("A1", defaults)
     result = {}
     for row in ws.get_all_values():
         if not row or not row[0].strip():
