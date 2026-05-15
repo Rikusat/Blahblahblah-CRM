@@ -743,9 +743,16 @@ elif page.startswith("クレーム"):
 
                 if not is_editing:
                     # 読み取り表示
+                    claim_ts = _clean(row[COL_CLAIM]) if COL_CLAIM in row.index else ""
                     current_done = _clean(row.get(COL_CLAIM_DONE, "")) if COL_CLAIM_DONE in row.index else ""
                     done_label = "✅ 対応済み" if current_done == "対応済み" else "🔴 未対応"
-                    st.markdown(f"<div style='font-family:monospace;font-size:.75rem;color:#aaa;margin-bottom:.3rem;'>{done_label}</div>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div style='font-family:monospace;font-size:.75rem;color:#aaa;margin-bottom:.1rem;'>"
+                        f"{done_label}"
+                        f"<span style='float:right;font-size:.7rem;color:#666;'>{claim_ts}</span>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
 
                     if COL_CLAIM_CONTENT in row.index:
                         content_val = _clean(row[COL_CLAIM_CONTENT])
