@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password, logout
-from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo, get_board, set_board
+from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo, get_board, set_board, DATA_OFFSET
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
 
@@ -457,7 +457,7 @@ elif page == "顧客一覧":
 
     label_col = find_col(filtered, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
     option_labels = {
-        idx: f"#{idx + 1}  {row[label_col]}" if label_col else f"#{idx + 1}"
+        idx: f"#{idx + DATA_OFFSET}  {row[label_col]}" if label_col else f"#{idx + DATA_OFFSET}"
         for idx, row in filtered.iterrows()
     }
 
@@ -592,7 +592,7 @@ elif page == "見込み":
         st.subheader("MEMO  ( J列 )")
 
         label_col = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
-        label = f"#{editing_idx + 1}  {mikomi.loc[editing_idx, label_col]}" if label_col else f"#{editing_idx + 1}"
+        label = f"#{editing_idx + DATA_OFFSET}  {mikomi.loc[editing_idx, label_col]}" if label_col else f"#{editing_idx + DATA_OFFSET}"
         st.caption(f"編集中：{label}")
 
         current_memo = str(df.loc[editing_idx, memo_col]) if memo_col else ""
