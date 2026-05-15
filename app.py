@@ -145,13 +145,23 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
             return c
     return None
 
+SELECT_OPTIONS: dict[str, list[str]] = {
+    COL_REPLIED: ["", "返信あり"],
+    "メール済か": ["", "済"],
+    "メール": ["", "済"],
+}
+
 def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
     values = {}
     defaults = defaults or {}
     for col in columns:
         val = str(defaults.get(col, "")) if pd.notna(defaults.get(col, "")) else ""
         key = f"{key_prefix}__{col}" if key_prefix else col
-        if col in TEXTAREA_KEYWORDS:
+        if col in SELECT_OPTIONS:
+            opts = SELECT_OPTIONS[col]
+            idx = opts.index(val) if val in opts else 0
+            values[col] = st.selectbox(col, opts, index=idx, key=key)
+        elif col in TEXTAREA_KEYWORDS:
             values[col] = st.text_area(col, value=val, key=key)
         else:
             values[col] = st.text_input(col, value=val, key=key)
