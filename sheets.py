@@ -120,6 +120,14 @@ def write_memo(row_index: int, memo: str) -> None:
     ws.update_cell(row_index, _col_index(ws, COL_MEMO), memo)
 
 
+def write_fields(row_index: int, data: dict) -> None:
+    ws = _get_worksheet()
+    headers = ws.row_values(HEADER_ROW)
+    for col_name, value in data.items():
+        if col_name in headers:
+            ws.update_cell(row_index, headers.index(col_name) + 1, value)
+
+
 def write_claim(row_index: int) -> None:
     from datetime import datetime
     ws = _get_worksheet()

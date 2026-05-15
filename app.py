@@ -4,7 +4,7 @@ import pandas as pd
 from auth import check_password, logout
 from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
-    write_replied, write_ordered, write_memo,
+    write_replied, write_ordered, write_memo, write_fields,
     write_claim, write_claim_done, write_claim_content, write_claim_note,
     get_board, set_board, get_select_options,
     DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
@@ -682,37 +682,46 @@ elif page == "見込み":
     editing_idx = st.session_state.get("mikomi_editing_idx")
     if editing_idx is not None and editing_idx in mikomi.index:
         st.divider()
-        st.subheader(f"MEMO  ( {COL_MEMO} )")
+        st.subheader("MEMO")
 
         label_col_e = find_col(mikomi, "事業所名", "担当者名", "担当者名/代表者名", "名前", "会社名")
         label = f"#{editing_idx}  {mikomi.loc[editing_idx, label_col_e]}" if label_col_e else f"#{editing_idx}"
         st.caption(f"編集中：{label}")
 
-        current_memo = str(df.loc[editing_idx, memo_col]) if memo_col else ""
-        if current_memo in ("nan", "None"):
-            current_memo = ""
+        _textarea_cols = [c for c in df.columns if c in TEXTAREA_KEYWORDS]
 
-        memo_key = f"mikomi_memo_{editing_idx}"
-        if memo_key not in st.session_state:
-            st.session_state[memo_key] = current_memo
+        for _col in _textarea_cols:
+            _fkey  = f"mikomi_field_{editing_idx}_{_col}"
+            _pkey  = f"mikomi_field_pending_{editing_idx}_{_col}"
+            _cur   = str(df.loc[editing_idx, _col]) if _col in df.columns else ""
+            if _cur in ("nan", "None"):
+                _cur = ""
+            if _pkey in st.session_state:
+                st.session_state[_fkey] = st.session_state.pop(_pkey)
+            if _fkey not in st.session_state:
+                st.session_state[_fkey] = _cur
 
-        ts_col, _ = st.columns([1, 5])
-        with ts_col:
-            if st.button("📅 日付挿入", key="ts_btn", use_container_width=True):
-                ts = datetime.now().strftime("%Y/%m/%d  %H:%M  ")
-                existing = st.session_state[memo_key]
-                st.session_state[memo_key] = (existing + "\n" + ts).lstrip("\n")
-                st.rerun()
-
-        st.text_area("メモ", placeholder="Take a note...", key=memo_key, height=200)
+            _fa, _fb = st.columns([8, 1])
+            with _fa:
+                st.text_area(_col, key=_fkey, height=150, placeholder=f"{_col}を入力...")
+            with _fb:
+                st.markdown("<div style='height:1.9rem'></div>", unsafe_allow_html=True)
+                if st.button("📅", key=f"ts_mikomi_{editing_idx}_{_col}"):
+                    _ts = datetime.now().strftime("%Y/%m/%d  %H:%M  ")
+                    st.session_state[_pkey] = (st.session_state.get(_fkey, _cur) + "\n" + _ts).lstrip("\n")
+                    st.rerun()
 
         sv_col, cl_col = st.columns(2)
         with sv_col:
             if st.button("💾 保存", type="primary", use_container_width=True, key="save_memo_btn"):
+                _save_data = {
+                    _col: st.session_state.get(f"mikomi_field_{editing_idx}_{_col}", "")
+                    for _col in _textarea_cols if _col in df.columns
+                }
                 with st.spinner("保存中..."):
-                    write_memo(editing_idx, st.session_state[memo_key])
+                    write_fields(editing_idx, _save_data)
                 reload()
-                st.success("メモを保存しました")
+                st.success("保存しました")
                 st.rerun()
         with cl_col:
             if st.button("✕ 閉じる", use_container_width=True, key="close_memo_btn"):
