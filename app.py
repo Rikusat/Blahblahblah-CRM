@@ -82,6 +82,22 @@ hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
 /* ── Caption / small text ── */
 .stCaption p { color: #b4b4b4 !important; font-family: monospace !important; font-size: 0.75rem !important; }
 
+/* ── Sidebar collapsed re-open button ── */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    background: #111 !important;
+    border: 1px solid #2a2a2a !important;
+    border-radius: 0 6px 6px 0 !important;
+}
+[data-testid="stSidebarCollapsedControl"] button {
+    color: #FF8C00 !important;
+}
+[data-testid="stSidebarCollapsedControl"] svg {
+    fill: #FF8C00 !important;
+    stroke: #FF8C00 !important;
+}
+
 /* ── Radio ── */
 .stRadio > div { gap: 0.4rem; }
 
