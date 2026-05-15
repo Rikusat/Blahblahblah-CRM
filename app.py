@@ -720,7 +720,7 @@ elif page == "見込み":
                         st.caption(f"📧 {_val(row, email_col)}")
                     if _val(row, url_col):
                         _u = _val(row, url_col)
-                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 <a href='{_u}' target='_blank'>{_u}</a></div>", unsafe_allow_html=True)
                     if _claim:
                         st.caption(f"⚠️ クレーム：{_claim}")
                     if memo_col:
@@ -865,7 +865,7 @@ elif page == "受注リスト":
                         st.caption(f"📧 {_val(row, email_col)}")
                     if _val(row, url_col):
                         _u = _val(row, url_col)
-                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 <a href='{_u}' target='_blank'>{_u}</a></div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # クレーム
@@ -952,7 +952,7 @@ elif page.startswith("クレーム"):
                             st.caption(f"📧 {_val(row, email_col)}")
                         if _val(row, url_col):
                             _u = _val(row, url_col)
-                            st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 <a href='{_u}' target='_blank'>{_u}</a></div>", unsafe_allow_html=True)
 
                         _content_v = _val(row, COL_CLAIM_CONTENT) if COL_CLAIM_CONTENT in row.index else ""
                         _note_v    = _val(row, COL_CLAIM_NOTE)    if COL_CLAIM_NOTE in row.index    else ""
