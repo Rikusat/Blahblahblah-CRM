@@ -203,6 +203,8 @@ def render_cards(df: pd.DataFrame):
 # Sidebar
 # ---------------------------------------------------------------------------
 
+df = load_data()
+
 st.sidebar.markdown(
     "<div style='padding:1.2rem 0 0.4rem;font-size:1.3rem;font-family:monospace;color:#FF8C00;font-weight:700;letter-spacing:3px;'>◈ OCTAIL</div>",
     unsafe_allow_html=True,
@@ -237,12 +239,6 @@ if st.sidebar.button("⟳  データ更新", use_container_width=True):
 if st.sidebar.button("→  ログアウト", use_container_width=True):
     logout()
     st.rerun()
-
-# ---------------------------------------------------------------------------
-# Load data
-# ---------------------------------------------------------------------------
-
-df = load_data()
 
 # ---------------------------------------------------------------------------
 # ターミナル
