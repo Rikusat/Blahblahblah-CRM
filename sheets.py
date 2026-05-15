@@ -11,7 +11,7 @@ SCOPES = [
 HEADER_ROW = 1   # 1行目がカラム名
 DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = sheet row番号）
 
-COL_REPLIED = "返信あり"
+COL_REPLIED = "返信有無"
 COL_ORDERED = "受注有無"
 COL_MEMO    = "連携メモ"
 
