@@ -321,6 +321,12 @@ elif page == "ダッシュボード":
         ordered_count = int(df[col_k].astype(str).str.contains("受注", na=False).sum())
     achievement = ordered_count / monthly_target if monthly_target > 0 else 0
 
+    gauge_color = "#2FFFB4" if achievement >= 1.0 else "#EC2D01"
+    st.markdown(
+        f"<style>.stProgress > div > div > div > div {{ background: {gauge_color} !important; }}</style>",
+        unsafe_allow_html=True,
+    )
+
     c1, c2, c3 = st.columns(3)
     c1.metric("月間目標", f"{monthly_target} 件")
     c2.metric("受注数", f"{ordered_count} 件")
