@@ -783,15 +783,15 @@ elif page == "クレーム":
                         st.session_state[key] = (existing + "\n" + ts).lstrip("\n")
 
                     st.checkbox("対応済み", key=done_key)
-                    if COL_CLAIM_CONTENT in row.index:
-                        if st.button("📅", key=f"ts_content_{idx}", help="日付挿入"):
+                    ts_c, _ = st.columns([1, 4])
+                    with ts_c:
+                        if st.button("📅 日付挿入", key=f"ts_{idx}", use_container_width=True):
                             _insert_ts(content_key)
-                            st.rerun()
-                        st.text_area("クレーム内容", key=content_key, height=80, placeholder="クレーム内容を入力...")
-                    if COL_CLAIM_NOTE in row.index:
-                        if st.button("📅", key=f"ts_note_{idx}", help="日付挿入"):
                             _insert_ts(note_key)
                             st.rerun()
+                    if COL_CLAIM_CONTENT in row.index:
+                        st.text_area("クレーム内容", key=content_key, height=80, placeholder="クレーム内容を入力...")
+                    if COL_CLAIM_NOTE in row.index:
                         st.text_area("対応内容", key=note_key, height=80, placeholder="対応内容を入力...")
 
                     sv_col, cl_col = st.columns(2)
