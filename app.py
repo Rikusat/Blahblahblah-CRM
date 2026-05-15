@@ -355,26 +355,24 @@ elif page == "顧客一覧":
     selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x])
     row_data = df.loc[selected_idx].to_dict()
 
+    # メール有無（A列）・返信あり（I列）・受注（K列）はボタン管理のため編集フォームから除外
+    EXCLUDE_COLS = {df.columns[0]} | (
+        {df.columns[8]}  if len(df.columns) > 8  else set()
+    ) | (
+        {df.columns[10]} if len(df.columns) > 10 else set()
+    )
+    edit_cols = [c for c in df.columns if c not in EXCLUDE_COLS]
+
     with st.form("edit_form"):
-        edited = render_fields(list(df.columns), defaults=row_data, key_prefix=f"edit_{selected_idx}")
-        c1, c2, c3, c4 = st.columns(4)
-        save    = c1.form_submit_button("💾 保存",    use_container_width=True, type="primary")
-        replied = c2.form_submit_button("📩 返信あり", use_container_width=True)
-        ordered = c3.form_submit_button("🏆 受注",    use_container_width=True)
-        delete  = c4.form_submit_button("🗑️ 削除",   use_container_width=True)
+        edited = render_fields(edit_cols, defaults=row_data, key_prefix=f"edit_{selected_idx}")
+        c1, c2 = st.columns(2)
+        save   = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
+        delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
 
     if save:
         with st.spinner("保存中..."):
             update_row(selected_idx, edited)
         reload(); st.success("保存しました"); st.rerun()
-    if replied:
-        with st.spinner("更新中..."):
-            write_replied(selected_idx)
-        reload(); st.success("返信ありを記録しました"); st.rerun()
-    if ordered:
-        with st.spinner("更新中..."):
-            write_ordered(selected_idx)
-        reload(); st.success("受注を記録しました"); st.rerun()
     if delete:
         with st.spinner("削除中..."):
             delete_row(selected_idx)
