@@ -149,6 +149,7 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
 
 SELECT_OPTIONS: dict[str, list[str]] = {
     COL_REPLIED: ["", "見込みC", "見込みB", "見込みA"],
+    COL_ORDERED: ["", "受注"],
     "メール済か": ["", "済み"],
     "メール": ["", "済み"],
 }
@@ -536,41 +537,42 @@ elif page.startswith("顧客一覧"):
     else:
         st.caption("🔒 編集・削除は管理者モードで行えます")
 
-    b1, b2 = st.columns(2)
-    with b1:
-        if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
-            st.session_state["reply_selecting"] = selected_idx
-            st.rerun()
-    with b2:
-        if st.button("🏆 受注", use_container_width=True, key="btn_ordered"):
-            with st.spinner("更新中..."):
-                write_ordered(selected_idx)
-            reload(); st.success("受注を記録しました"); st.rerun()
+    if not st.session_state.get("admin_mode"):
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
+                st.session_state["reply_selecting"] = selected_idx
+                st.rerun()
+        with b2:
+            if st.button("🏆 受注", use_container_width=True, key="btn_ordered"):
+                with st.spinner("更新中..."):
+                    write_ordered(selected_idx)
+                reload(); st.success("受注を記録しました"); st.rerun()
 
-    if st.session_state.get("reply_selecting") == selected_idx:
-        st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
-        rc1, rc2, rc3, rc4, rc5 = st.columns(5)
-        for col, label, value in [
-            (rc1, "見込みC", "見込みC"),
-            (rc2, "見込みB", "見込みB"),
-            (rc3, "見込みA", "見込みA"),
-            (rc4, "⚠️ クレーム", None),
-            (rc5, "✕", "cancel"),
-        ]:
-            with col:
-                if st.button(label, use_container_width=True, key=f"reply_opt_{value}_{selected_idx}"):
-                    if value == "cancel":
-                        st.session_state.pop("reply_selecting", None)
-                    elif value is None:
-                        with st.spinner("更新中..."):
-                            write_claim(selected_idx)
-                        st.session_state.pop("reply_selecting", None)
-                        reload(); st.success("クレームを記録しました"); st.rerun()
-                    else:
-                        with st.spinner("更新中..."):
-                            write_replied(selected_idx, value)
-                        st.session_state.pop("reply_selecting", None)
-                        reload(); st.success(f"{value} を記録しました"); st.rerun()
+        if st.session_state.get("reply_selecting") == selected_idx:
+            st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
+            rc1, rc2, rc3, rc4, rc5 = st.columns(5)
+            for col, label, value in [
+                (rc1, "見込みC", "見込みC"),
+                (rc2, "見込みB", "見込みB"),
+                (rc3, "見込みA", "見込みA"),
+                (rc4, "⚠️ クレーム", None),
+                (rc5, "✕", "cancel"),
+            ]:
+                with col:
+                    if st.button(label, use_container_width=True, key=f"reply_opt_{value}_{selected_idx}"):
+                        if value == "cancel":
+                            st.session_state.pop("reply_selecting", None)
+                        elif value is None:
+                            with st.spinner("更新中..."):
+                                write_claim(selected_idx)
+                            st.session_state.pop("reply_selecting", None)
+                            reload(); st.success("クレームを記録しました"); st.rerun()
+                        else:
+                            with st.spinner("更新中..."):
+                                write_replied(selected_idx, value)
+                            st.session_state.pop("reply_selecting", None)
+                            reload(); st.success(f"{value} を記録しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
 # 見込み
