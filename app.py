@@ -262,7 +262,14 @@ if page == "ターミナル":
             sc1, sc2, sc3 = st.columns(3)
             sc1.metric("顧客総数", len(df))
             sc2.metric("返信あり", replied_count)
-            sc3.metric(f"受注 / 目標", f"{ordered_count} / {monthly_target}")
+            target_color = "#2FFFB4" if ordered_count >= monthly_target else "#EC2D01"
+            sc3.markdown(
+                f"<div style='background:#111;border:1px solid #1e1e1e;border-radius:6px;padding:1rem 1.2rem;'>"
+                f"<div style='color:#bbb;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;font-family:monospace;margin-bottom:.3rem;'>受注 / 目標</div>"
+                f"<div style='color:{target_color};font-family:monospace;font-size:1.8rem;font-weight:700;line-height:1;'>{ordered_count} / {monthly_target}</div>"
+                f"</div>",
+                unsafe_allow_html=True,
+            )
 
     with col_r:
         st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
