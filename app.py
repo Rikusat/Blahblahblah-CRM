@@ -489,15 +489,26 @@ elif page == "見込み":
                     st.markdown(f"🔗 [{url}]({url})")
 
                 # J列メモ表示
+                is_expanded = st.session_state.get(f"mikomi_open_{idx}", False)
                 if memo_col and memo_col in row.index:
                     memo_val = str(row[memo_col])
                     if memo_val not in ("", "nan", "None"):
                         st.markdown(
-                            f"<div style='color:#666;font-family:monospace;font-size:.78rem;"
-                            f"border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;"
-                            f"white-space:pre-wrap;'>{memo_val[:150]}{'…' if len(memo_val)>150 else ''}</div>",
+                            "<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;'></div>",
                             unsafe_allow_html=True,
                         )
+                        display_text = memo_val if is_expanded else memo_val[:150]
+                        ellipsis = "" if is_expanded or len(memo_val) <= 150 else "…"
+                        st.markdown(
+                            f"<div style='color:#666;font-family:monospace;font-size:.78rem;"
+                            f"padding-top:.5rem;white-space:pre-wrap;'>{display_text}{ellipsis}</div>",
+                            unsafe_allow_html=True,
+                        )
+                        if len(memo_val) > 150:
+                            label = "閉じる ▲" if is_expanded else "開く ▼"
+                            if st.button(label, key=f"mikomi_toggle_{idx}", use_container_width=True):
+                                st.session_state[f"mikomi_open_{idx}"] = not is_expanded
+                                st.rerun()
 
                 if st.button("📝 メモ", key=f"mikomi_edit_{idx}", use_container_width=True):
                     st.session_state["mikomi_editing_idx"] = idx
