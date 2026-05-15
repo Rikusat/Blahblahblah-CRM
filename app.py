@@ -536,7 +536,7 @@ elif page.startswith("顧客一覧"):
     else:
         st.caption("🔒 編集・削除は管理者モードで行えます")
 
-    b1, b2, b3 = st.columns(3)
+    b1, b2 = st.columns(2)
     with b1:
         if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
             st.session_state["reply_selecting"] = selected_idx
@@ -546,11 +546,6 @@ elif page.startswith("顧客一覧"):
             with st.spinner("更新中..."):
                 write_ordered(selected_idx)
             reload(); st.success("受注を記録しました"); st.rerun()
-    with b3:
-        if st.button("⚠️ クレーム", use_container_width=True, key="btn_claim"):
-            with st.spinner("更新中..."):
-                write_claim(selected_idx)
-            reload(); st.success("クレームを記録しました"); st.rerun()
 
     if st.session_state.get("reply_selecting") == selected_idx:
         st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
