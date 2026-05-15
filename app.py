@@ -495,10 +495,14 @@ elif page.startswith("顧客一覧"):
         edited.update(render_fields(non_claim_cols, defaults=row_data, key_prefix=_prefix))
 
         if COL_CLAIM in edit_cols:
-            _claim_key = f"{_prefix}__{COL_CLAIM}"
+            _claim_key     = f"{_prefix}__{COL_CLAIM}"
+            _claim_pending = f"{_prefix}__claim_ts_pending"
             _claim_default = str(row_data.get(COL_CLAIM, ""))
             if _claim_default in ("nan", "None"):
                 _claim_default = ""
+            # 前回のボタン押下で保留されたタイムスタンプをウィジェット登録前に適用
+            if _claim_pending in st.session_state:
+                st.session_state[_claim_key] = st.session_state.pop(_claim_pending)
             fi_col, btn_col = st.columns([7, 1])
             with fi_col:
                 edited[COL_CLAIM] = st.text_input(COL_CLAIM, key=_claim_key,
@@ -508,7 +512,7 @@ elif page.startswith("顧客一覧"):
                 if st.button("📅", key="ts_claim_edit"):
                     _current = st.session_state.get(_claim_key, _claim_default)
                     _ts = _dt.now().strftime("%Y/%m/%d %H:%M")
-                    st.session_state[_claim_key] = (_current + "\n" + _ts).lstrip("\n")
+                    st.session_state[_claim_pending] = (_current + "\n" + _ts).lstrip("\n")
                     st.rerun()
 
         if st.button("💾 保存", use_container_width=True, type="primary", key="edit_save_btn"):
