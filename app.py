@@ -3,7 +3,7 @@ import pandas as pd
 
 from auth import check_password, logout
 from sheets import (
-    get_dataframe, update_row, add_row, delete_row,
+    get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
     write_replied, write_ordered, write_memo,
     get_board, set_board,
     DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
@@ -486,18 +486,31 @@ elif page == "顧客一覧":
     if st.session_state.get("admin_mode"):
         with st.form("edit_form"):
             edited = render_fields(edit_cols, defaults=row_data, key_prefix=f"edit_{selected_idx}")
-            c1, c2 = st.columns(2)
-            save   = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
-            delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
+            save = st.form_submit_button("💾 保存", use_container_width=True, type="primary")
 
         if save:
             with st.spinner("保存中..."):
                 update_row(selected_idx, edited)
             reload(); st.success("保存しました"); st.rerun()
-        if delete:
-            with st.spinner("削除中..."):
-                delete_row(selected_idx)
-            reload(); st.success("削除しました"); st.rerun()
+
+        # 削除（確認フロー）
+        if st.session_state.get("confirm_delete_idx") == selected_idx:
+            st.warning(f"⚠️ #{selected_idx} を削除します。削除シートに移動されます。")
+            d1, d2 = st.columns(2)
+            with d1:
+                if st.button("🗑️ 削除を確定", use_container_width=True, type="primary", key="confirm_del_btn"):
+                    with st.spinner("削除中..."):
+                        archive_and_delete_row(selected_idx)
+                    st.session_state.pop("confirm_delete_idx", None)
+                    reload(); st.success("削除しました（削除シートに移動済み）"); st.rerun()
+            with d2:
+                if st.button("✕ キャンセル", use_container_width=True, key="cancel_del_btn"):
+                    st.session_state.pop("confirm_delete_idx", None)
+                    st.rerun()
+        else:
+            if st.button("🗑️ 削除", use_container_width=True, key="delete_btn"):
+                st.session_state["confirm_delete_idx"] = selected_idx
+                st.rerun()
     else:
         st.caption("🔒 編集・削除は管理者モードで行えます")
 

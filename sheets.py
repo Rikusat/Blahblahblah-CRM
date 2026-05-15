@@ -74,6 +74,33 @@ def delete_row(row_index: int) -> None:
     ws.delete_rows(row_index)
 
 
+def _get_deleted_ws() -> gspread.Worksheet:
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=SCOPES
+    )
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(st.secrets["sheets"]["spreadsheet_id"])
+    try:
+        return sh.worksheet("削除")
+    except gspread.WorksheetNotFound:
+        return sh.add_worksheet(title="削除", rows=1000, cols=30)
+
+
+def archive_and_delete_row(row_index: int) -> None:
+    from datetime import datetime
+    ws = _get_worksheet()
+    headers = ws.row_values(HEADER_ROW)
+    row_data = ws.row_values(row_index)
+
+    deleted_ws = _get_deleted_ws()
+    existing = deleted_ws.get_all_values()
+    if not existing:
+        deleted_ws.append_row(headers + ["削除日時"])
+
+    deleted_ws.append_row(row_data + [datetime.now().strftime("%Y/%m/%d %H:%M:%S")])
+    ws.delete_rows(row_index)
+
+
 def write_replied(row_index: int) -> None:
     ws = _get_worksheet()
     ws.update_cell(row_index, _col_index(ws, COL_REPLIED), "返信あり")
