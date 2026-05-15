@@ -2,6 +2,7 @@ import csv
 import os
 
 import gspread
+from gspread.utils import rowcol_to_a1
 import pandas as pd
 import streamlit as st
 from google.oauth2.service_account import Credentials
@@ -14,7 +15,8 @@ SCOPES = [
 HEADER_ROW = 1   # 1行目がカラム名
 DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = sheet row番号）
 
-COL_REPLIED = "返信タイプ"
+COL_REPLIED    = "返信タイプ"
+COL_REPLIED_AT = "返信日時"
 COL_ORDERED = "受注日"
 COL_MEMO    = "連携メモ"
 COL_CLAIM         = "クレーム日時"
@@ -66,8 +68,10 @@ def _deduplicate_headers(headers: list[str]) -> list[str]:
 def update_row(row_index: int, data: dict) -> None:
     ws = _get_worksheet()
     headers = ws.row_values(HEADER_ROW)
-    for col_idx, header in enumerate(headers, start=1):
-        ws.update_cell(row_index, col_idx, data.get(header, ""))
+    row = [str(data.get(h, "")) for h in headers]
+    start_cell = rowcol_to_a1(row_index, 1)
+    end_cell   = rowcol_to_a1(row_index, len(headers))
+    ws.update([row], f"{start_cell}:{end_cell}")
 
 
 def add_row(data: dict) -> None:
@@ -110,13 +114,19 @@ def _safe_update(ws: gspread.Worksheet, row_index: int, col_name: str, value: st
     col = _col_index(ws, col_name)
     if col is None:
         return False
-    ws.update_cell(row_index, col, value)
+    cell = rowcol_to_a1(row_index, col)
+    ws.update([[str(value)]], cell)
     return True
 
 
 def write_replied(row_index: int, value: str = "返信あり") -> None:
+    from datetime import datetime
     ws = _get_worksheet()
     _safe_update(ws, row_index, COL_REPLIED, value)
+    ok = _safe_update(ws, row_index, COL_REPLIED_AT, datetime.now().strftime("%Y/%m/%d %H:%M"))
+    if not ok:
+        headers = ws.row_values(HEADER_ROW)
+        raise ValueError(f"列「{COL_REPLIED_AT}」が見つかりません。実際のヘッダー: {headers}")
 
 
 def write_ordered(row_index: int) -> None:

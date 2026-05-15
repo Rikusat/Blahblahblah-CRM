@@ -7,7 +7,7 @@ from sheets import (
     write_replied, write_ordered, write_memo, write_fields,
     write_claim, write_claim_done, write_claim_content, write_claim_note,
     get_board, set_board, get_select_options,
-    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO,
+    DATA_OFFSET, COL_REPLIED, COL_REPLIED_AT, COL_ORDERED, COL_MEMO,
     COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE,
 )
 
@@ -78,7 +78,8 @@ h2, h3 { color: #cc7000 !important; font-family: monospace !important; }
 
 /* ── Bordered containers (cards) ── */
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #111 !important; border: 1px solid #1e1e1e !important; border-radius: 8px !important;
+    background: #111 !important; border: 1px solid #1e1e1e !important;
+    border-radius: 6px !important; padding: 0.45rem 0.55rem !important;
 }
 
 /* ── DataFrame ── */
@@ -119,7 +120,7 @@ elif "admin_mode" not in st.session_state:
 # Constants
 # ---------------------------------------------------------------------------
 
-N_CARDS_PER_ROW = 3
+N_CARDS_PER_ROW = 4
 
 # ---------------------------------------------------------------------------
 # Data
@@ -149,6 +150,12 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
         if c in df.columns:
             return c
     return None
+
+def _val(row: pd.Series, col: str | None) -> str:
+    if not col or col not in row.index:
+        return ""
+    v = str(row[col]).strip()
+    return "" if v in ("nan", "None") else v
 
 # 設定シートから全設定を読み込み、アプリ設定キーとフォーム選択肢に分離
 _APP_CONFIG_KEYS = {"月間目標", "テキストエリア列"}
@@ -638,7 +645,11 @@ elif page == "見込み":
     st.session_state["_last_page"] = "見込み"
 
     memo_col = COL_MEMO if COL_MEMO in df.columns else None
-    mikomi   = df[df[COL_REPLIED].astype(str).str.strip().replace("nan", "").ne("")]
+    mikomi = df[df[COL_REPLIED].astype(str).str.strip().replace("nan", "").ne("")]
+    if COL_REPLIED_AT in mikomi.columns:
+        mikomi = mikomi.sort_values(COL_REPLIED_AT, ascending=False)
+    else:
+        mikomi = mikomi.sort_index(ascending=False)
 
     st.caption(f"返信あり：{len(mikomi)} 件")
 
@@ -646,62 +657,89 @@ elif page == "見込み":
         st.info("返信ありの顧客はまだいません。")
         st.stop()
 
-    name_col   = find_col(mikomi, "事業所名", "会社名", "担当者名", "名前")
-    ind_col    = find_col(mikomi, "業種")
-    person_col = find_col(mikomi, "担当者名", "担当者名/代表者名", "代表者名")
-    email_col  = find_col(mikomi, "メールアドレス", "メール")
-    url_col    = find_col(mikomi, "URL", "url", "ウェブサイト")
+    name_col        = find_col(mikomi, "事業所名", "会社名", "担当者名", "名前")
+    ind_col         = find_col(mikomi, "業種")
+    person_col      = find_col(mikomi, "担当者名", "担当者名/代表者名", "代表者名")
+    email_col       = find_col(mikomi, "メールアドレス", "メール")
+    url_col         = find_col(mikomi, "URL", "url", "ウェブサイト")
+    next_action_col = "次回アクション" if "次回アクション" in mikomi.columns else None
 
-    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    with st.expander("🐛 DEBUG"):
+        st.write([c for c in mikomi.columns if "アクション" in c or "次回" in c])
+        st.write(f"next_action_col={next_action_col}")
+        if next_action_col:
+            st.write(mikomi[[next_action_col]].head(3))
+
+    cols = st.columns(N_CARDS_PER_ROW, gap="small")
     for n_row, (idx, row) in enumerate(mikomi.iterrows()):
         i = n_row % N_CARDS_PER_ROW
         if i == 0 and n_row > 0:
-            cols = st.columns(N_CARDS_PER_ROW, gap="large")
+            cols = st.columns(N_CARDS_PER_ROW, gap="small")
         with cols[i]:
             with st.container(border=True):
-                if name_col:
-                    st.markdown(f"**{row[name_col]}**")
-                replied_val = str(row[COL_REPLIED]).strip() if COL_REPLIED in row.index else ""
-                if replied_val and replied_val not in ("nan", "None"):
-                    st.caption(f"📌 {replied_val}")
-                claim_val = str(row[COL_CLAIM]).strip() if COL_CLAIM in row.index else ""
-                if claim_val and claim_val not in ("nan", "None"):
-                    st.caption(f"⚠️ クレーム日時：{claim_val}")
-                if ind_col:
-                    st.caption(f"🏢 {row[ind_col]}")
-                if person_col and person_col != name_col:
-                    st.markdown(f"👤 {row[person_col]}")
-                if email_col and row[email_col]:
-                    st.markdown(f"📧 {row[email_col]}")
-                if url_col and row[url_col]:
-                    url = str(row[url_col]).strip()
-                    st.markdown(f"🔗 [{url}]({url})")
+                _name       = _val(row, name_col) or f"#{idx}"
+                _replied    = _val(row, COL_REPLIED)
+                _claim      = _val(row, COL_CLAIM)
+                _next_act   = _val(row, next_action_col)
 
-                # 連携メモ表示
-                is_expanded = st.session_state.get(f"mikomi_open_{idx}", False)
-                if memo_col and memo_col in row.index:
-                    memo_val = str(row[memo_col])
-                    if memo_val not in ("", "nan", "None"):
-                        st.markdown(
-                            "<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;'></div>",
-                            unsafe_allow_html=True,
-                        )
-                        display_text = memo_val if is_expanded else memo_val[:150]
-                        ellipsis = "" if is_expanded or len(memo_val) <= 150 else "…"
-                        st.markdown(
-                            f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;"
-                            f"padding-top:.5rem;white-space:pre-wrap;'>{display_text}{ellipsis}</div>",
-                            unsafe_allow_html=True,
-                        )
-                        if len(memo_val) > 150:
-                            label = "閉じる ▲" if is_expanded else "開く ▼"
-                            if st.button(label, key=f"mikomi_toggle_{idx}", use_container_width=True):
-                                st.session_state[f"mikomi_open_{idx}"] = not is_expanded
-                                st.rerun()
+                st.markdown(
+                    f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
+                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.2rem;"
+                    f"' title='{_name}'>{_name}</div>",
+                    unsafe_allow_html=True,
+                )
+                _pills = ""
+                if _replied:
+                    _pills += (
+                        f"<span style='font-size:.6rem;background:#1a1200;border:1px solid #2a2200;"
+                        f"border-radius:3px;padding:.1rem .35rem;color:#FF8C00;font-family:monospace;"
+                        f"margin-right:.25rem;'>{_replied}</span>"
+                    )
+                if _claim:
+                    _pills += (
+                        f"<span style='font-size:.6rem;background:#1a0000;border:1px solid #3a0000;"
+                        f"border-radius:3px;padding:.1rem .35rem;color:#EC2D01;font-family:monospace;'>⚠️</span>"
+                    )
+                if _pills:
+                    st.markdown(f"<div style='margin-bottom:.2rem;'>{_pills}</div>", unsafe_allow_html=True)
+                if _next_act:
+                    st.markdown(
+                        f"<div style='font-size:.65rem;font-family:monospace;color:#7ab3ff;"
+                        f"margin-bottom:.2rem;'>📅 {_next_act}</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                if st.button("📝 メモ", key=f"mikomi_edit_{idx}", use_container_width=True):
-                    st.session_state["mikomi_editing_idx"] = idx
+                _det_key = f"det_mikomi_{idx}"
+                _is_open = st.session_state.get(_det_key, False)
+                if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_mikomi_{idx}", use_container_width=True):
+                    st.session_state[_det_key] = not _is_open
                     st.rerun()
+
+                if _is_open:
+                    st.markdown("<div style='border-top:1px solid #222;margin:.3rem 0 .2rem;'></div>", unsafe_allow_html=True)
+                    if _val(row, ind_col):
+                        st.caption(f"🏢 {_val(row, ind_col)}")
+                    if person_col != name_col and _val(row, person_col):
+                        st.caption(f"👤 {_val(row, person_col)}")
+                    if _val(row, email_col):
+                        st.caption(f"📧 {_val(row, email_col)}")
+                    if _val(row, url_col):
+                        _u = _val(row, url_col)
+                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
+                    if _claim:
+                        st.caption(f"⚠️ クレーム：{_claim}")
+                    if memo_col:
+                        _memo = _val(row, memo_col)
+                        if _memo:
+                            st.markdown("<div style='border-top:1px solid #1e1e1e;margin:.25rem 0;'></div>", unsafe_allow_html=True)
+                            st.markdown(
+                                f"<div style='color:#bbb;font-family:monospace;font-size:.72rem;"
+                                f"white-space:pre-wrap;'>{_memo[:200]}{'…' if len(_memo) > 200 else ''}</div>",
+                                unsafe_allow_html=True,
+                            )
+                    if st.button("📝 メモ編集", key=f"mikomi_edit_{idx}", use_container_width=True):
+                        st.session_state["mikomi_editing_idx"] = idx
+                        st.rerun()
 
     # --- 編集フォーム ---
     editing_idx = st.session_state.get("mikomi_editing_idx")
@@ -768,7 +806,7 @@ elif page == "受注リスト":
         st.warning(f"「{COL_ORDERED}」列がスプレッドシートに存在しません。")
         st.stop()
 
-    orders = df[df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("")]
+    orders = df[df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("")].sort_values(COL_ORDERED, ascending=False)
 
     st.caption(f"受注：{len(orders)} 件")
 
@@ -783,31 +821,56 @@ elif page == "受注リスト":
     url_col     = find_col(orders, "URL", "url", "ウェブサイト")
     product_col = find_col(orders, "受注商品")
 
-    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    cols = st.columns(N_CARDS_PER_ROW, gap="small")
     for n_row, (idx, row) in enumerate(orders.iterrows()):
         i = n_row % N_CARDS_PER_ROW
         if i == 0 and n_row > 0:
-            cols = st.columns(N_CARDS_PER_ROW, gap="large")
+            cols = st.columns(N_CARDS_PER_ROW, gap="small")
         with cols[i]:
             with st.container(border=True):
-                if name_col:
-                    st.markdown(f"**{row[name_col]}**")
-                ordered_val = str(row[COL_ORDERED]).strip()
-                if ordered_val and ordered_val not in ("nan", "None"):
-                    st.caption(f"🏆 {ordered_val}")
-                if product_col:
-                    prod = str(row[product_col]).strip()
-                    if prod and prod not in ("nan", "None"):
-                        st.caption(f"📦 {prod}")
-                if ind_col:
-                    st.caption(f"🏢 {row[ind_col]}")
-                if person_col and person_col != name_col:
-                    st.markdown(f"👤 {row[person_col]}")
-                if email_col and row[email_col]:
-                    st.markdown(f"📧 {row[email_col]}")
-                if url_col and row[url_col]:
-                    url = str(row[url_col]).strip()
-                    st.markdown(f"🔗 [{url}]({url})")
+                _name    = _val(row, name_col) or f"#{idx}"
+                _ordered = _val(row, COL_ORDERED)
+                _prod    = _val(row, product_col)
+
+                st.markdown(
+                    f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
+                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.2rem;"
+                    f"' title='{_name}'>{_name}</div>",
+                    unsafe_allow_html=True,
+                )
+                _pills = ""
+                if _ordered:
+                    _pills += (
+                        f"<span style='font-size:.6rem;background:#001a00;border:1px solid #002a00;"
+                        f"border-radius:3px;padding:.1rem .35rem;color:#2FFFB4;font-family:monospace;"
+                        f"margin-right:.25rem;'>🏆 {_ordered}</span>"
+                    )
+                if _prod:
+                    _pills += (
+                        f"<span style='font-size:.6rem;background:#1a1a1a;border:1px solid #2a2a2a;"
+                        f"border-radius:3px;padding:.1rem .35rem;color:#adadad;font-family:monospace;"
+                        f"'>📦 {_prod}</span>"
+                    )
+                if _pills:
+                    st.markdown(f"<div style='margin-bottom:.2rem;'>{_pills}</div>", unsafe_allow_html=True)
+
+                _det_key = f"det_order_{idx}"
+                _is_open = st.session_state.get(_det_key, False)
+                if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_order_{idx}", use_container_width=True):
+                    st.session_state[_det_key] = not _is_open
+                    st.rerun()
+
+                if _is_open:
+                    st.markdown("<div style='border-top:1px solid #222;margin:.3rem 0 .2rem;'></div>", unsafe_allow_html=True)
+                    if _val(row, ind_col):
+                        st.caption(f"🏢 {_val(row, ind_col)}")
+                    if person_col != name_col and _val(row, person_col):
+                        st.caption(f"👤 {_val(row, person_col)}")
+                    if _val(row, email_col):
+                        st.caption(f"📧 {_val(row, email_col)}")
+                    if _val(row, url_col):
+                        _u = _val(row, url_col)
+                        st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
 
 # ---------------------------------------------------------------------------
 # クレーム
@@ -840,114 +903,120 @@ elif page.startswith("クレーム"):
     email_col  = find_col(claims, "メールアドレス", "メール")
     url_col    = find_col(claims, "URL", "url", "ウェブサイト")
 
-    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    def _clean(v) -> str:
+        s = str(v)
+        return "" if s in ("nan", "None") else s
+
+    cols = st.columns(N_CARDS_PER_ROW, gap="small")
     for n_row, (idx, row) in enumerate(claims.iterrows()):
         i = n_row % N_CARDS_PER_ROW
         if i == 0 and n_row > 0:
-            cols = st.columns(N_CARDS_PER_ROW, gap="large")
-
-        def _clean(v) -> str:
-            s = str(v)
-            return "" if s in ("nan", "None") else s
+            cols = st.columns(N_CARDS_PER_ROW, gap="small")
 
         with cols[i]:
             with st.container(border=True):
-                if name_col:
-                    st.markdown(f"**{row[name_col]}**")
-                if ind_col:
-                    st.caption(f"🏢 {row[ind_col]}")
-                if person_col and person_col != name_col:
-                    st.markdown(f"👤 {row[person_col]}")
-                if email_col and row[email_col]:
-                    st.markdown(f"📧 {row[email_col]}")
-                if url_col and row[url_col]:
-                    url = str(row[url_col]).strip()
-                    st.markdown(f"🔗 [{url}]({url})")
+                _name     = _val(row, name_col) or f"#{idx}"
+                _claim_ts = _val(row, COL_CLAIM)
+                _done     = _val(row, COL_CLAIM_DONE) if COL_CLAIM_DONE in row.index else ""
+                _done_icon = "✅" if _done == "対応済み" else "🔴"
 
-                st.markdown("<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;'></div>", unsafe_allow_html=True)
+                st.markdown(
+                    f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
+                    f"white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.15rem;"
+                    f"' title='{_name}'>{_name}</div>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f"<div style='font-size:.65rem;font-family:monospace;color:#888;margin-bottom:.2rem;'>"
+                    f"{_done_icon}&nbsp;<span style='color:#555;'>{_claim_ts}</span></div>",
+                    unsafe_allow_html=True,
+                )
 
-                is_editing = st.session_state.get(f"claim_editing_{idx}", False)
+                _is_editing = st.session_state.get(f"claim_editing_{idx}", False)
+                _is_detail  = st.session_state.get(f"det_claim_{idx}", False)
+                _show       = _is_detail or _is_editing
 
-                if not is_editing:
-                    # 読み取り表示
-                    claim_ts = _clean(row[COL_CLAIM]) if COL_CLAIM in row.index else ""
-                    current_done = _clean(row.get(COL_CLAIM_DONE, "")) if COL_CLAIM_DONE in row.index else ""
-                    done_label = "✅ 対応済み" if current_done == "対応済み" else "🔴 未対応"
-                    st.markdown(
-                        f"<div style='font-family:monospace;font-size:.75rem;color:#aaa;margin-bottom:.1rem;'>"
-                        f"{done_label}"
-                        f"<span style='float:right;font-size:.7rem;color:#666;'>{claim_ts}</span>"
-                        f"</div>",
-                        unsafe_allow_html=True,
-                    )
+                if st.button("閉じる ▲" if _show else "詳細 ▼", key=f"det_btn_claim_{idx}", use_container_width=True):
+                    if _show:
+                        st.session_state[f"det_claim_{idx}"] = False
+                        for _k in (f"claim_editing_{idx}", f"claim_edit_content_{idx}", f"claim_edit_note_{idx}", f"claim_edit_done_{idx}"):
+                            st.session_state.pop(_k, None)
+                    else:
+                        st.session_state[f"det_claim_{idx}"] = True
+                    st.rerun()
 
-                    if COL_CLAIM_CONTENT in row.index:
-                        content_val = _clean(row[COL_CLAIM_CONTENT])
-                        if content_val:
-                            st.markdown(f"<div style='font-size:.7rem;color:#adadad;font-family:monospace;margin-bottom:.1rem;'>クレーム内容</div>", unsafe_allow_html=True)
-                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-bottom:.5rem;'>{content_val}</div>", unsafe_allow_html=True)
+                if _show:
+                    st.markdown("<div style='border-top:1px solid #222;margin:.3rem 0 .2rem;'></div>", unsafe_allow_html=True)
 
-                    if COL_CLAIM_NOTE in row.index:
-                        note_val = _clean(row[COL_CLAIM_NOTE])
-                        if note_val:
-                            st.markdown(f"<div style='font-size:.7rem;color:#adadad;font-family:monospace;margin-bottom:.1rem;'>対応内容</div>", unsafe_allow_html=True)
-                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-bottom:.5rem;'>{note_val}</div>", unsafe_allow_html=True)
+                    if not _is_editing:
+                        if _val(row, ind_col):
+                            st.caption(f"🏢 {_val(row, ind_col)}")
+                        if person_col != name_col and _val(row, person_col):
+                            st.caption(f"👤 {_val(row, person_col)}")
+                        if _val(row, email_col):
+                            st.caption(f"📧 {_val(row, email_col)}")
+                        if _val(row, url_col):
+                            _u = _val(row, url_col)
+                            st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 [{_u}]({_u})</div>", unsafe_allow_html=True)
 
-                    if st.button("✏️ 編集", key=f"claim_edit_open_{idx}", use_container_width=True):
-                        st.session_state[f"claim_editing_{idx}"] = True
-                        st.rerun()
+                        _content_v = _val(row, COL_CLAIM_CONTENT) if COL_CLAIM_CONTENT in row.index else ""
+                        _note_v    = _val(row, COL_CLAIM_NOTE)    if COL_CLAIM_NOTE in row.index    else ""
+                        if _content_v:
+                            st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;margin-top:.25rem;'>クレーム内容</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.72rem;white-space:pre-wrap;margin-bottom:.25rem;'>{_content_v}</div>", unsafe_allow_html=True)
+                        if _note_v:
+                            st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;margin-top:.25rem;'>対応内容</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.72rem;white-space:pre-wrap;margin-bottom:.25rem;'>{_note_v}</div>", unsafe_allow_html=True)
 
-                else:
-                    # 編集フォーム
-                    current_content = _clean(row[COL_CLAIM_CONTENT]) if COL_CLAIM_CONTENT in row.index else ""
-                    current_note    = _clean(row[COL_CLAIM_NOTE])    if COL_CLAIM_NOTE in row.index    else ""
-                    current_done    = _clean(row[COL_CLAIM_DONE])    if COL_CLAIM_DONE in row.index    else ""
+                        if st.button("✏️ 編集", key=f"claim_edit_open_{idx}", use_container_width=True):
+                            st.session_state[f"claim_editing_{idx}"] = True
+                            st.rerun()
 
-                    content_key = f"claim_edit_content_{idx}"
-                    note_key    = f"claim_edit_note_{idx}"
-                    done_key    = f"claim_edit_done_{idx}"
+                    else:
+                        _cur_content = _val(row, COL_CLAIM_CONTENT) if COL_CLAIM_CONTENT in row.index else ""
+                        _cur_note    = _val(row, COL_CLAIM_NOTE)    if COL_CLAIM_NOTE in row.index    else ""
+                        _cur_done    = _val(row, COL_CLAIM_DONE)    if COL_CLAIM_DONE in row.index    else ""
 
-                    if content_key not in st.session_state:
-                        st.session_state[content_key] = current_content
-                    if note_key not in st.session_state:
-                        st.session_state[note_key] = current_note
-                    if done_key not in st.session_state:
-                        st.session_state[done_key] = (current_done == "対応済み")
+                        _ck = f"claim_edit_content_{idx}"
+                        _nk = f"claim_edit_note_{idx}"
+                        _dk = f"claim_edit_done_{idx}"
 
-                    from datetime import datetime as _dt
-                    def _insert_ts(key):
-                        ts = _dt.now().strftime("%Y/%m/%d  %H:%M  ")
-                        existing = st.session_state.get(key, "")
-                        st.session_state[key] = (existing + "\n" + ts).lstrip("\n")
+                        if _ck not in st.session_state: st.session_state[_ck] = _cur_content
+                        if _nk not in st.session_state: st.session_state[_nk] = _cur_note
+                        if _dk not in st.session_state: st.session_state[_dk] = (_cur_done == "対応済み")
 
-                    st.checkbox("対応済み", key=done_key)
-                    ts_c, _ = st.columns([1, 4])
-                    with ts_c:
+                        from datetime import datetime as _dt
+                        def _insert_ts(key):
+                            ts = _dt.now().strftime("%Y/%m/%d  %H:%M  ")
+                            existing = st.session_state.get(key, "")
+                            st.session_state[key] = (existing + "\n" + ts).lstrip("\n")
+
+                        st.checkbox("対応済み", key=_dk)
                         if st.button("📅", key=f"ts_{idx}", use_container_width=True):
-                            _insert_ts(content_key)
-                            _insert_ts(note_key)
+                            _insert_ts(_ck)
+                            _insert_ts(_nk)
                             st.rerun()
-                    if COL_CLAIM_CONTENT in row.index:
-                        st.text_area("クレーム内容", key=content_key, height=80, placeholder="クレーム内容を入力...")
-                    if COL_CLAIM_NOTE in row.index:
-                        st.text_area("対応内容", key=note_key, height=80, placeholder="対応内容を入力...")
+                        if COL_CLAIM_CONTENT in row.index:
+                            st.text_area("クレーム内容", key=_ck, height=80, placeholder="クレーム内容を入力...")
+                        if COL_CLAIM_NOTE in row.index:
+                            st.text_area("対応内容", key=_nk, height=80, placeholder="対応内容を入力...")
 
-                    sv_col, cl_col = st.columns(2)
-                    with sv_col:
-                        if st.button("💾 保存", key=f"claim_save_{idx}", use_container_width=True, type="primary"):
-                            with st.spinner("保存中..."):
-                                if COL_CLAIM_CONTENT in row.index:
-                                    write_claim_content(idx, st.session_state[content_key])
-                                if COL_CLAIM_NOTE in row.index:
-                                    write_claim_note(idx, st.session_state[note_key])
-                                write_claim_done(idx, "対応済み" if st.session_state[done_key] else "")
-                            for k in (content_key, note_key, done_key):
-                                st.session_state.pop(k, None)
-                            st.session_state[f"claim_editing_{idx}"] = False
-                            reload(); st.success("保存しました"); st.rerun()
-                    with cl_col:
-                        if st.button("✕ キャンセル", key=f"claim_cancel_{idx}", use_container_width=True):
-                            for k in (content_key, note_key, done_key):
-                                st.session_state.pop(k, None)
-                            st.session_state[f"claim_editing_{idx}"] = False
-                            st.rerun()
+                        sv_col, cl_col = st.columns(2)
+                        with sv_col:
+                            if st.button("💾 保存", key=f"claim_save_{idx}", use_container_width=True, type="primary"):
+                                with st.spinner("保存中..."):
+                                    if COL_CLAIM_CONTENT in row.index:
+                                        write_claim_content(idx, st.session_state[_ck])
+                                    if COL_CLAIM_NOTE in row.index:
+                                        write_claim_note(idx, st.session_state[_nk])
+                                    write_claim_done(idx, "対応済み" if st.session_state[_dk] else "")
+                                for _k in (_ck, _nk, _dk):
+                                    st.session_state.pop(_k, None)
+                                st.session_state[f"claim_editing_{idx}"] = False
+                                reload(); st.success("保存しました"); st.rerun()
+                        with cl_col:
+                            if st.button("✕ キャンセル", key=f"claim_cancel_{idx}", use_container_width=True):
+                                for _k in (_ck, _nk, _dk):
+                                    st.session_state.pop(_k, None)
+                                st.session_state[f"claim_editing_{idx}"] = False
+                                st.rerun()
