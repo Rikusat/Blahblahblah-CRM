@@ -467,8 +467,8 @@ elif page == "顧客一覧":
     selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="customer_select")
     row_data = df.loc[selected_idx].to_dict()
 
-    # 先頭列・受注 はボタン管理のため編集フォームから除外
-    exclude = {df.columns[0]}
+    # 受注 はボタン管理のため編集フォームから除外
+    exclude = set()
     if COL_ORDERED in df.columns:
         exclude.add(COL_ORDERED)
     edit_cols = [c for c in df.columns if c not in exclude]
