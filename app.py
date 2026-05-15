@@ -504,32 +504,40 @@ elif page.startswith("顧客一覧"):
         from datetime import datetime as _dt
         _prefix = f"edit_{selected_idx}"
 
+        def _ts_field(col_name: str, ts_key_suffix: str):
+            _key     = f"{_prefix}__{col_name}"
+            _pending = f"{_prefix}__{ts_key_suffix}_pending"
+            _default = str(row_data.get(col_name, ""))
+            if _default in ("nan", "None"):
+                _default = ""
+            if _pending in st.session_state:
+                st.session_state[_key] = st.session_state.pop(_pending)
+            fi_col, btn_col = st.columns([7, 1])
+            with fi_col:
+                val = st.text_input(col_name, key=_key,
+                                    value=st.session_state.get(_key, _default))
+            with btn_col:
+                st.markdown("<div style='height:1.9rem'></div>", unsafe_allow_html=True)
+                if st.button("📅", key=f"ts_{ts_key_suffix}_edit"):
+                    _ts = _dt.now().strftime("%Y/%m/%d %H:%M")
+                    st.session_state[_pending] = (st.session_state.get(_key, _default) + "\n" + _ts).lstrip("\n")
+                    st.rerun()
+            return val
+
         edited = {}
+        _ts_cols  = {COL_ORDERED, COL_CLAIM}
         _claim_group = [COL_CLAIM, COL_CLAIM_CONTENT, COL_CLAIM_DONE, COL_CLAIM_NOTE]
-        base_cols = [c for c in edit_cols if c not in _claim_group]
+        base_cols = [c for c in edit_cols if c not in _claim_group and c not in _ts_cols]
         edited.update(render_fields(base_cols, defaults=row_data, key_prefix=_prefix))
+
+        # 受注日（タイムスタンプボタン付き）
+        if COL_ORDERED in edit_cols:
+            edited[COL_ORDERED] = _ts_field(COL_ORDERED, "ordered")
 
         # クレーム系フィールドを指定順でレンダリング
         for _col in [c for c in _claim_group if c in edit_cols]:
             if _col == COL_CLAIM:
-                _claim_key     = f"{_prefix}__{COL_CLAIM}"
-                _claim_pending = f"{_prefix}__claim_ts_pending"
-                _claim_default = str(row_data.get(COL_CLAIM, ""))
-                if _claim_default in ("nan", "None"):
-                    _claim_default = ""
-                if _claim_pending in st.session_state:
-                    st.session_state[_claim_key] = st.session_state.pop(_claim_pending)
-                fi_col, btn_col = st.columns([7, 1])
-                with fi_col:
-                    edited[COL_CLAIM] = st.text_input(COL_CLAIM, key=_claim_key,
-                                                       value=st.session_state.get(_claim_key, _claim_default))
-                with btn_col:
-                    st.markdown("<div style='height:1.9rem'></div>", unsafe_allow_html=True)
-                    if st.button("📅", key="ts_claim_edit"):
-                        _current = st.session_state.get(_claim_key, _claim_default)
-                        _ts = _dt.now().strftime("%Y/%m/%d %H:%M")
-                        st.session_state[_claim_pending] = (_current + "\n" + _ts).lstrip("\n")
-                        st.rerun()
+                edited[COL_CLAIM] = _ts_field(COL_CLAIM, "claim")
             else:
                 edited.update(render_fields([_col], defaults=row_data, key_prefix=_prefix))
 
