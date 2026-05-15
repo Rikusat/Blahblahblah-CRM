@@ -714,6 +714,11 @@ elif page == "クレーム":
         i = n_row % N_CARDS_PER_ROW
         if i == 0 and n_row > 0:
             cols = st.columns(N_CARDS_PER_ROW, gap="large")
+
+        def _clean(v) -> str:
+            s = str(v)
+            return "" if s in ("nan", "None") else s
+
         with cols[i]:
             with st.container(border=True):
                 if name_col:
@@ -730,36 +735,69 @@ elif page == "クレーム":
 
                 st.markdown("<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;'></div>", unsafe_allow_html=True)
 
-                # クレーム内容
-                if COL_CLAIM_CONTENT in row.index:
-                    current_content = str(row[COL_CLAIM_CONTENT])
-                    if current_content in ("nan", "None"):
-                        current_content = ""
-                    content_key = f"claim_content_{idx}"
-                    st.text_area("クレーム内容", value=current_content, key=content_key, height=80,
-                                 placeholder="クレーム内容を入力...", label_visibility="visible")
-                    if st.button("💾 内容保存", key=f"claim_content_save_{idx}", use_container_width=True):
-                        with st.spinner("保存中..."):
-                            write_claim_content(idx, st.session_state[content_key])
-                        reload(); st.success("保存しました"); st.rerun()
+                is_editing = st.session_state.get(f"claim_editing_{idx}", False)
 
-                # 対応済みチェックボックス
-                current_done = str(row.get(COL_CLAIM_DONE, "")) == "対応済み" if COL_CLAIM_DONE in row.index else False
-                done = st.checkbox("対応済み", value=current_done, key=f"claim_done_{idx}")
-                if done != current_done:
-                    with st.spinner("更新中..."):
-                        write_claim_done(idx, "対応済み" if done else "")
-                    reload(); st.rerun()
+                if not is_editing:
+                    # 読み取り表示
+                    current_done = _clean(row.get(COL_CLAIM_DONE, "")) if COL_CLAIM_DONE in row.index else ""
+                    done_label = "✅ 対応済み" if current_done == "対応済み" else "🔴 未対応"
+                    st.markdown(f"<div style='font-family:monospace;font-size:.75rem;color:#aaa;margin-bottom:.3rem;'>{done_label}</div>", unsafe_allow_html=True)
 
-                # 対応内容
-                if COL_CLAIM_NOTE in row.index:
-                    current_note = str(row[COL_CLAIM_NOTE])
-                    if current_note in ("nan", "None"):
-                        current_note = ""
-                    note_key = f"claim_note_{idx}"
-                    st.text_area("対応内容", value=current_note, key=note_key, height=80,
-                                 placeholder="対応内容を入力...", label_visibility="visible")
-                    if st.button("💾 保存", key=f"claim_note_save_{idx}", use_container_width=True):
-                        with st.spinner("保存中..."):
-                            write_claim_note(idx, st.session_state[note_key])
-                        reload(); st.success("保存しました"); st.rerun()
+                    if COL_CLAIM_CONTENT in row.index:
+                        content_val = _clean(row[COL_CLAIM_CONTENT])
+                        if content_val:
+                            st.markdown(f"<div style='font-size:.7rem;color:#adadad;font-family:monospace;margin-bottom:.1rem;'>クレーム内容</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-bottom:.5rem;'>{content_val}</div>", unsafe_allow_html=True)
+
+                    if COL_CLAIM_NOTE in row.index:
+                        note_val = _clean(row[COL_CLAIM_NOTE])
+                        if note_val:
+                            st.markdown(f"<div style='font-size:.7rem;color:#adadad;font-family:monospace;margin-bottom:.1rem;'>対応内容</div>", unsafe_allow_html=True)
+                            st.markdown(f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;white-space:pre-wrap;margin-bottom:.5rem;'>{note_val}</div>", unsafe_allow_html=True)
+
+                    if st.button("✏️ 編集", key=f"claim_edit_open_{idx}", use_container_width=True):
+                        st.session_state[f"claim_editing_{idx}"] = True
+                        st.rerun()
+
+                else:
+                    # 編集フォーム
+                    current_content = _clean(row[COL_CLAIM_CONTENT]) if COL_CLAIM_CONTENT in row.index else ""
+                    current_note    = _clean(row[COL_CLAIM_NOTE])    if COL_CLAIM_NOTE in row.index    else ""
+                    current_done    = _clean(row[COL_CLAIM_DONE])    if COL_CLAIM_DONE in row.index    else ""
+
+                    content_key = f"claim_edit_content_{idx}"
+                    note_key    = f"claim_edit_note_{idx}"
+                    done_key    = f"claim_edit_done_{idx}"
+
+                    if content_key not in st.session_state:
+                        st.session_state[content_key] = current_content
+                    if note_key not in st.session_state:
+                        st.session_state[note_key] = current_note
+                    if done_key not in st.session_state:
+                        st.session_state[done_key] = (current_done == "対応済み")
+
+                    st.checkbox("対応済み", key=done_key)
+                    if COL_CLAIM_CONTENT in row.index:
+                        st.text_area("クレーム内容", key=content_key, height=80, placeholder="クレーム内容を入力...")
+                    if COL_CLAIM_NOTE in row.index:
+                        st.text_area("対応内容", key=note_key, height=80, placeholder="対応内容を入力...")
+
+                    sv_col, cl_col = st.columns(2)
+                    with sv_col:
+                        if st.button("💾 保存", key=f"claim_save_{idx}", use_container_width=True, type="primary"):
+                            with st.spinner("保存中..."):
+                                if COL_CLAIM_CONTENT in row.index:
+                                    write_claim_content(idx, st.session_state[content_key])
+                                if COL_CLAIM_NOTE in row.index:
+                                    write_claim_note(idx, st.session_state[note_key])
+                                write_claim_done(idx, "対応済み" if st.session_state[done_key] else "")
+                            for k in (content_key, note_key, done_key):
+                                st.session_state.pop(k, None)
+                            st.session_state[f"claim_editing_{idx}"] = False
+                            reload(); st.success("保存しました"); st.rerun()
+                    with cl_col:
+                        if st.button("✕ キャンセル", key=f"claim_cancel_{idx}", use_container_width=True):
+                            for k in (content_key, note_key, done_key):
+                                st.session_state.pop(k, None)
+                            st.session_state[f"claim_editing_{idx}"] = False
+                            st.rerun()
