@@ -26,10 +26,12 @@ def get_dataframe() -> pd.DataFrame:
     values = ws.get_all_values()
     if len(values) < HEADER_ROW:
         return pd.DataFrame()
-    headers = _deduplicate_headers(values[HEADER_ROW - 1])  # 3行目（index 2）
+    headers = _deduplicate_headers(values[HEADER_ROW - 1])
     if len(values) <= HEADER_ROW:
         return pd.DataFrame(columns=headers)
-    return pd.DataFrame(values[HEADER_ROW:], columns=headers)  # 4行目以降
+    df = pd.DataFrame(values[HEADER_ROW:], columns=headers)
+    df.index = range(DATA_OFFSET, DATA_OFFSET + len(df))  # index = sheet row番号
+    return df
 
 
 def _deduplicate_headers(headers: list[str]) -> list[str]:
@@ -48,9 +50,8 @@ def _deduplicate_headers(headers: list[str]) -> list[str]:
 def update_row(row_index: int, data: dict) -> None:
     ws = _get_worksheet()
     headers = ws.row_values(HEADER_ROW)
-    sheet_row = row_index + DATA_OFFSET
     for col_idx, header in enumerate(headers, start=1):
-        ws.update_cell(sheet_row, col_idx, data.get(header, ""))
+        ws.update_cell(row_index, col_idx, data.get(header, ""))
 
 
 def add_row(data: dict) -> None:
@@ -62,26 +63,22 @@ def add_row(data: dict) -> None:
 
 def delete_row(row_index: int) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + DATA_OFFSET
-    ws.delete_rows(sheet_row)
+    ws.delete_rows(row_index)
 
 
 def write_replied(row_index: int) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + DATA_OFFSET
-    ws.update_cell(sheet_row, 9, "返信あり")  # Column I = 9
+    ws.update_cell(row_index, 9, "返信あり")  # Column I = 9
 
 
 def write_ordered(row_index: int) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + DATA_OFFSET
-    ws.update_cell(sheet_row, 11, "受注")  # Column K = 11
+    ws.update_cell(row_index, 11, "受注")  # Column K = 11
 
 
 def write_mikomi_memo(row_index: int, memo: str) -> None:
     ws = _get_worksheet()
-    sheet_row = row_index + DATA_OFFSET
-    ws.update_cell(sheet_row, 10, memo)  # Column J = 10
+    ws.update_cell(row_index, 10, memo)  # Column J = 10
 
 
 def _get_board_ws() -> gspread.Worksheet:
