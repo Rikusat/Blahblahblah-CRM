@@ -101,7 +101,10 @@ hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
 if not check_password():
     st.stop()
 
-if "admin_mode" not in st.session_state:
+if "session_initialized" not in st.session_state:
+    st.session_state["session_initialized"] = True
+    st.session_state["admin_mode"] = False
+elif "admin_mode" not in st.session_state:
     st.session_state["admin_mode"] = False
 
 # ---------------------------------------------------------------------------
@@ -191,11 +194,11 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_allow_html=True)
 
-if st.session_state.get("admin_mode"):
-    st.sidebar.markdown(
-        "<div style='color:#FF8C00;font-family:monospace;font-size:.72rem;letter-spacing:2px;padding:.3rem 0;'>🔓 ADMIN MODE</div>",
-        unsafe_allow_html=True,
-    )
+admin_label = "🔓 ADMIN" if st.session_state.get("admin_mode") else "🔒 VIEWER"
+st.sidebar.markdown(
+    f"<div style='color:#{'FF8C00' if st.session_state.get('admin_mode') else '444'};font-family:monospace;font-size:.7rem;letter-spacing:2px;padding:.2rem 0;'>{admin_label}</div>",
+    unsafe_allow_html=True,
+)
 
 if st.sidebar.button("⟳  データ更新", use_container_width=True):
     reload()
