@@ -82,3 +82,43 @@ def write_mikomi_memo(row_index: int, memo: str) -> None:
     ws = _get_worksheet()
     sheet_row = row_index + DATA_OFFSET
     ws.update_cell(sheet_row, 10, memo)  # Column J = 10
+
+
+def _get_board_ws() -> gspread.Worksheet:
+    creds = Credentials.from_service_account_info(
+        st.secrets["gcp_service_account"], scopes=SCOPES
+    )
+    client = gspread.authorize(creds)
+    sh = client.open_by_key(st.secrets["sheets"]["spreadsheet_id"])
+    try:
+        return sh.worksheet("掲示板")
+    except gspread.WorksheetNotFound:
+        ws = sh.add_worksheet(title="掲示板", rows=10, cols=5)
+        ws.update("A1:D3", [
+            ["type", "content", "color", "size"],
+            ["admin", "", "#FF8C00", "中"],
+            ["sales", "", "#d4d4d4", "中"],
+        ])
+        return ws
+
+
+def get_board(board_type: str) -> dict:
+    ws = _get_board_ws()
+    for row in ws.get_all_values()[1:]:
+        if row and row[0] == board_type:
+            return {
+                "content": row[1] if len(row) > 1 else "",
+                "color":   row[2] if len(row) > 2 else "#d4d4d4",
+                "size":    row[3] if len(row) > 3 else "中",
+            }
+    return {"content": "", "color": "#d4d4d4", "size": "中"}
+
+
+def set_board(board_type: str, content: str, color: str, size: str) -> None:
+    ws = _get_board_ws()
+    rows = ws.get_all_values()
+    for i, row in enumerate(rows[1:], start=2):
+        if row and row[0] == board_type:
+            ws.update(f"B{i}:D{i}", [[content, color, size]])
+            return
+    ws.append_row([board_type, content, color, size])

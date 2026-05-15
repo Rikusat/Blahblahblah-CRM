@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from auth import check_password, logout
-from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo
+from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo, get_board, set_board
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
 
@@ -123,6 +123,10 @@ TEXTAREA_KEYWORDS = {"備考", "メモ", "次回アクション", "notes", "memo
 @st.cache_data(ttl=60)
 def load_data() -> pd.DataFrame:
     return get_dataframe()
+
+@st.cache_data(ttl=30)
+def load_board_data(board_type: str) -> dict:
+    return get_board(board_type)
 
 def reload():
     st.cache_data.clear()
@@ -311,6 +315,51 @@ if page == "ターミナル":
                         st.rerun()
                     else:
                         st.error("パスワードが違います")
+
+    # ── 掲示板 ────────────────────────────────────────────────────
+    st.divider()
+
+    SIZE_MAP   = {"小": "0.85rem", "中": "1.1rem", "大": "1.5rem", "特大": "2rem"}
+    is_admin   = st.session_state.get("admin_mode", False)
+    board_type = "admin" if is_admin else "sales"
+    board_label = "管理者掲示板" if is_admin else "営業掲示板"
+
+    board_data = load_board_data(board_type)
+    b_content  = board_data.get("content", "")
+    b_color    = board_data.get("color", "#FF8C00" if is_admin else "#d4d4d4")
+    b_size     = board_data.get("size", "中")
+    if b_size not in SIZE_MAP:
+        b_size = "中"
+    b_color_safe = b_color if (b_color.startswith("#") and len(b_color) == 7) else ("#FF8C00" if is_admin else "#d4d4d4")
+
+    st.markdown(f"<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>{board_label.upper()}</div>", unsafe_allow_html=True)
+
+    if b_content:
+        st.markdown(
+            f"<div style='color:{b_color_safe};font-size:{SIZE_MAP[b_size]};font-family:monospace;"
+            f"background:#0a0a0a;border:1px solid #1e1e1e;border-radius:6px;"
+            f"padding:1rem 1.2rem;white-space:pre-wrap;min-height:60px;'>{b_content}</div>",
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            "<div style='color:#555;font-size:.85rem;font-family:monospace;"
+            "background:#0a0a0a;border:1px dashed #1e1e1e;border-radius:6px;"
+            "padding:1rem 1.2rem;min-height:60px;'>— メッセージなし —</div>",
+            unsafe_allow_html=True,
+        )
+
+    with st.expander("✏️ 編集"):
+        draft = st.text_area("メッセージ", value=b_content, key=f"board_{board_type}_txt", height=120, label_visibility="collapsed", placeholder="メッセージを入力...")
+        ec1, ec2 = st.columns(2)
+        draft_color = ec1.color_picker("文字色", value=b_color_safe, key=f"board_{board_type}_color")
+        draft_size  = ec2.selectbox("文字サイズ", list(SIZE_MAP.keys()), index=list(SIZE_MAP.keys()).index(b_size), key=f"board_{board_type}_size")
+        if st.button("💾 保存", key=f"board_{board_type}_save", type="primary", use_container_width=True):
+            with st.spinner("保存中..."):
+                set_board(board_type, draft, draft_color, draft_size)
+            reload()
+            st.success("掲示板を更新しました")
+            st.rerun()
 
 # ---------------------------------------------------------------------------
 # Dashboard
