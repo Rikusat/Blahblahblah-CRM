@@ -352,7 +352,7 @@ elif page == "顧客一覧":
         for idx, row in filtered.iterrows()
     }
 
-    selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x])
+    selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="customer_select")
     row_data = df.loc[selected_idx].to_dict()
 
     # メール有無（A列）・返信あり（I列）・受注（K列）はボタン管理のため編集フォームから除外
