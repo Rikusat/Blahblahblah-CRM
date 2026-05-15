@@ -14,7 +14,7 @@ DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = she
 COL_REPLIED = "返信タイプ"
 COL_ORDERED = "受注"
 COL_MEMO    = "連携メモ"
-COL_CLAIM         = "クレーム"
+COL_CLAIM         = "クレーム日時"
 COL_CLAIM_DONE    = "クレーム対応済み"
 COL_CLAIM_CONTENT = "クレーム内容"
 COL_CLAIM_NOTE    = "クレーム対応内容"
