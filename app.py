@@ -150,6 +150,7 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
 SELECT_OPTIONS: dict[str, list[str]] = {
     COL_REPLIED: ["", "見込みC", "見込みB", "見込みA"],
     COL_ORDERED: ["", "受注"],
+    "受注商品": ["", "商品X", "商品Y", "商品Z"],
     "メール済か": ["", "済み"],
     "メール": ["", "済み"],
 }
