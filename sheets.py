@@ -102,9 +102,9 @@ def archive_and_delete_row(row_index: int) -> None:
     ws.delete_rows(row_index)
 
 
-def write_replied(row_index: int) -> None:
+def write_replied(row_index: int, value: str = "返信あり") -> None:
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_REPLIED), "返信あり")
+    ws.update_cell(row_index, _col_index(ws, COL_REPLIED), value)
 
 
 def write_ordered(row_index: int) -> None:

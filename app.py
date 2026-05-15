@@ -148,7 +148,7 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
     return None
 
 SELECT_OPTIONS: dict[str, list[str]] = {
-    COL_REPLIED: ["", "返信あり"],
+    COL_REPLIED: ["", "見込みC", "見込みB", "見込みA"],
     "メール済か": ["", "済み"],
     "メール": ["", "済み"],
 }
@@ -521,9 +521,8 @@ elif page.startswith("顧客一覧"):
     b1, b2, b3 = st.columns(3)
     with b1:
         if st.button("📩 返信あり", use_container_width=True, key="btn_replied"):
-            with st.spinner("更新中..."):
-                write_replied(selected_idx)
-            reload(); st.success("返信ありを記録しました"); st.rerun()
+            st.session_state["reply_selecting"] = selected_idx
+            st.rerun()
     with b2:
         if st.button("🏆 受注", use_container_width=True, key="btn_ordered"):
             with st.spinner("更新中..."):
@@ -534,6 +533,31 @@ elif page.startswith("顧客一覧"):
             with st.spinner("更新中..."):
                 write_claim(selected_idx)
             reload(); st.success("クレームを記録しました"); st.rerun()
+
+    if st.session_state.get("reply_selecting") == selected_idx:
+        st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
+        rc1, rc2, rc3, rc4, rc5 = st.columns(5)
+        for col, label, value in [
+            (rc1, "見込みC", "見込みC"),
+            (rc2, "見込みB", "見込みB"),
+            (rc3, "見込みA", "見込みA"),
+            (rc4, "⚠️ クレーム", None),
+            (rc5, "✕", "cancel"),
+        ]:
+            with col:
+                if st.button(label, use_container_width=True, key=f"reply_opt_{value}_{selected_idx}"):
+                    if value == "cancel":
+                        st.session_state.pop("reply_selecting", None)
+                    elif value is None:
+                        with st.spinner("更新中..."):
+                            write_claim(selected_idx)
+                        st.session_state.pop("reply_selecting", None)
+                        reload(); st.success("クレームを記録しました"); st.rerun()
+                    else:
+                        with st.spinner("更新中..."):
+                            write_replied(selected_idx, value)
+                        st.session_state.pop("reply_selecting", None)
+                        reload(); st.success(f"{value} を記録しました"); st.rerun()
 
 # ---------------------------------------------------------------------------
 # 見込み
@@ -557,7 +581,7 @@ elif page == "見込み":
     st.session_state["_last_page"] = "見込み"
 
     memo_col = COL_MEMO if COL_MEMO in df.columns else None
-    mikomi   = df[df[COL_REPLIED].astype(str).str.contains("返信あり", na=False)]
+    mikomi   = df[df[COL_REPLIED].astype(str).str.strip().replace("nan", "").ne("")]
 
     st.caption(f"返信あり：{len(mikomi)} 件")
 
@@ -580,6 +604,9 @@ elif page == "見込み":
             with st.container(border=True):
                 if name_col:
                     st.markdown(f"**{row[name_col]}**")
+                replied_val = str(row[COL_REPLIED]).strip() if COL_REPLIED in row.index else ""
+                if replied_val and replied_val not in ("nan", "None"):
+                    st.caption(f"📌 {replied_val}")
                 if ind_col:
                     st.caption(f"🏢 {row[ind_col]}")
                 if person_col and person_col != name_col:
