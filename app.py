@@ -776,10 +776,22 @@ elif page == "クレーム":
                     if done_key not in st.session_state:
                         st.session_state[done_key] = (current_done == "対応済み")
 
+                    from datetime import datetime as _dt
+                    def _insert_ts(key):
+                        ts = _dt.now().strftime("%Y/%m/%d  %H:%M  ")
+                        existing = st.session_state.get(key, "")
+                        st.session_state[key] = (existing + "\n" + ts).lstrip("\n")
+
                     st.checkbox("対応済み", key=done_key)
                     if COL_CLAIM_CONTENT in row.index:
+                        if st.button("📅", key=f"ts_content_{idx}", help="日付挿入"):
+                            _insert_ts(content_key)
+                            st.rerun()
                         st.text_area("クレーム内容", key=content_key, height=80, placeholder="クレーム内容を入力...")
                     if COL_CLAIM_NOTE in row.index:
+                        if st.button("📅", key=f"ts_note_{idx}", help="日付挿入"):
+                            _insert_ts(note_key)
+                            st.rerun()
                         st.text_area("対応内容", key=note_key, height=80, placeholder="対応内容を入力...")
 
                     sv_col, cl_col = st.columns(2)
