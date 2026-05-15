@@ -785,7 +785,7 @@ elif page == "クレーム":
                     st.checkbox("対応済み", key=done_key)
                     ts_c, _ = st.columns([1, 4])
                     with ts_c:
-                        if st.button("📅 日付挿入", key=f"ts_{idx}", use_container_width=True):
+                        if st.button("📅", key=f"ts_{idx}", use_container_width=True):
                             _insert_ts(content_key)
                             _insert_ts(note_key)
                             st.rerun()
