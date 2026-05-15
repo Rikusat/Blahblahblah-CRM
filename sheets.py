@@ -111,8 +111,10 @@ def write_replied(row_index: int, value: str = "返信あり") -> None:
 
 
 def write_ordered(row_index: int) -> None:
+    from datetime import datetime
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_ORDERED), "受注")
+    ts = datetime.now().strftime("%Y/%m/%d %H:%M")
+    ws.update_cell(row_index, _col_index(ws, COL_ORDERED), ts)
 
 
 def write_memo(row_index: int, memo: str) -> None:

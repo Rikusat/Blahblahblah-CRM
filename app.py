@@ -292,7 +292,7 @@ if page == "ターミナル":
             monthly_target = _MONTHLY_TARGET
             ordered_count = 0
             if COL_ORDERED in df.columns:
-                ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
+                ordered_count = int(df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("").sum())
             replied_count = 0
             if COL_REPLIED in df.columns:
                 replied_count = int(df[COL_REPLIED].astype(str).str.contains("返信あり", na=False).sum())
@@ -417,7 +417,7 @@ elif page == "ダッシュボード":
     monthly_target = _MONTHLY_TARGET
     ordered_count = 0
     if COL_ORDERED in df.columns:
-        ordered_count = int(df[COL_ORDERED].astype(str).str.contains("受注", na=False).sum())
+        ordered_count = int(df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("").sum())
     achievement = ordered_count / monthly_target if monthly_target > 0 else 0
 
     gauge_color = "#2FFFB4" if achievement >= 1.0 else "#EC2D01"
