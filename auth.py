@@ -13,8 +13,12 @@ def _get_controller():
 def check_password() -> bool:
     ctrl = _get_controller()
 
-    if st.session_state.get("authenticated") or ctrl.get(COOKIE_NAME) == "ok":
+    if st.session_state.get("authenticated"):
+        return True
+
+    if ctrl.get(COOKIE_NAME) == "ok":
         st.session_state.authenticated = True
+        st.session_state["admin_mode"] = False
         return True
 
     st.title("🔐 ログイン")
@@ -23,6 +27,7 @@ def check_password() -> bool:
     if st.button("ログイン"):
         if password == st.secrets["app"]["password"]:
             st.session_state.authenticated = True
+            st.session_state["admin_mode"] = False
             ctrl.set(COOKIE_NAME, "ok")
             st.rerun()
         else:
@@ -34,4 +39,5 @@ def check_password() -> bool:
 def logout():
     ctrl = _get_controller()
     st.session_state.authenticated = False
+    st.session_state["admin_mode"] = False
     ctrl.remove(COOKIE_NAME)

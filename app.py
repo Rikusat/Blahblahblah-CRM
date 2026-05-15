@@ -102,7 +102,7 @@ if not check_password():
     st.stop()
 
 if "admin_mode" not in st.session_state:
-    st.session_state["admin_mode"] = True
+    st.session_state["admin_mode"] = False
 
 # ---------------------------------------------------------------------------
 # Constants
