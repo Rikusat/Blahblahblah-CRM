@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from auth import check_password
+from auth import check_password, logout
 from sheets import get_dataframe, update_row, add_row, delete_row, write_replied, write_ordered, write_mikomi_memo
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
@@ -193,7 +193,7 @@ if st.sidebar.button("⟳  データ更新", use_container_width=True):
     st.rerun()
 
 if st.sidebar.button("→  ログアウト", use_container_width=True):
-    st.session_state.authenticated = False
+    logout()
     st.rerun()
 
 # ---------------------------------------------------------------------------
