@@ -165,7 +165,7 @@ TEXTAREA_KEYWORDS: set[str] = (
 _MONTHLY_TARGET: int = (
     int(_raw_settings["月間目標"][1])
     if "月間目標" in _raw_settings and len(_raw_settings["月間目標"]) > 1
-    else int(st.secrets["app"].get("monthly_target", 10))
+    else 10
 )
 
 def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
