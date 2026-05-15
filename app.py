@@ -483,9 +483,7 @@ elif page.startswith("顧客一覧"):
     selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="customer_select")
     row_data = df.loc[selected_idx].to_dict()
 
-    # 受注・クレーム系はボタン管理のため編集フォームから除外
-    exclude = {COL_ORDERED, COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE}
-    edit_cols = [c for c in df.columns if c not in exclude]
+    edit_cols = list(df.columns)
 
     if st.session_state.get("admin_mode"):
         with st.form("edit_form"):
