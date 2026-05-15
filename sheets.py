@@ -179,6 +179,15 @@ def set_board(board_type: str, content: str, color: str, size: str) -> None:
     ws.append_row([board_type, content, color, size])
 
 
+_DEFAULT_SELECT_OPTIONS = [
+    [COL_REPLIED,  "見込みC", "見込みB", "見込みA"],
+    [COL_ORDERED,  "受注"],
+    ["受注商品",   "商品X",  "商品Y",   "商品Z"],
+    ["メール済か", "済み"],
+    ["メール",     "済み"],
+]
+
+
 def get_select_options() -> dict[str, list[str]]:
     creds = Credentials.from_service_account_info(
         st.secrets["gcp_service_account"], scopes=SCOPES
@@ -188,7 +197,9 @@ def get_select_options() -> dict[str, list[str]]:
     try:
         ws = sh.worksheet("設定")
     except gspread.WorksheetNotFound:
-        return {}
+        ws = sh.add_worksheet(title="設定", rows=50, cols=20)
+        ws.update("A1", _DEFAULT_SELECT_OPTIONS)
+
     result = {}
     for row in ws.get_all_values():
         if not row or not row[0].strip():
