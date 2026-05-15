@@ -4,9 +4,9 @@ import pandas as pd
 from auth import check_password, logout
 from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
-    write_replied, write_ordered, write_memo, write_claim,
+    write_replied, write_ordered, write_memo, write_claim, write_claim_done, write_claim_note,
     get_board, set_board,
-    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO, COL_CLAIM,
+    DATA_OFFSET, COL_REPLIED, COL_ORDERED, COL_MEMO, COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_NOTE,
 )
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
@@ -701,4 +701,50 @@ elif page == "クレーム":
         st.info("クレームの顧客はいません。")
         st.stop()
 
-    st.dataframe(claims, use_container_width=True)
+    name_col   = find_col(claims, "事業所名", "会社名", "担当者名", "名前")
+    ind_col    = find_col(claims, "業種")
+    person_col = find_col(claims, "担当者名", "担当者名/代表者名", "代表者名")
+    email_col  = find_col(claims, "メールアドレス", "メール")
+    url_col    = find_col(claims, "URL", "url", "ウェブサイト")
+
+    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    for n_row, (idx, row) in enumerate(claims.iterrows()):
+        i = n_row % N_CARDS_PER_ROW
+        if i == 0 and n_row > 0:
+            cols = st.columns(N_CARDS_PER_ROW, gap="large")
+        with cols[i]:
+            with st.container(border=True):
+                if name_col:
+                    st.markdown(f"**{row[name_col]}**")
+                if ind_col:
+                    st.caption(f"🏢 {row[ind_col]}")
+                if person_col and person_col != name_col:
+                    st.markdown(f"👤 {row[person_col]}")
+                if email_col and row[email_col]:
+                    st.markdown(f"📧 {row[email_col]}")
+                if url_col and row[url_col]:
+                    url = str(row[url_col]).strip()
+                    st.markdown(f"🔗 [{url}]({url})")
+
+                st.markdown("<div style='border-top:1px solid #1e1e1e;margin-top:.5rem;padding-top:.5rem;'></div>", unsafe_allow_html=True)
+
+                # 対応済みチェックボックス
+                current_done = str(row.get(COL_CLAIM_DONE, "")) == "対応済み" if COL_CLAIM_DONE in row.index else False
+                done = st.checkbox("対応済み", value=current_done, key=f"claim_done_{idx}")
+                if done != current_done:
+                    with st.spinner("更新中..."):
+                        write_claim_done(idx, "対応済み" if done else "")
+                    reload(); st.rerun()
+
+                # 対応内容
+                if COL_CLAIM_NOTE in row.index:
+                    current_note = str(row[COL_CLAIM_NOTE])
+                    if current_note in ("nan", "None"):
+                        current_note = ""
+                    note_key = f"claim_note_{idx}"
+                    st.text_area("対応内容", value=current_note, key=note_key, height=80,
+                                 placeholder="対応内容を入力...", label_visibility="visible")
+                    if st.button("💾 保存", key=f"claim_note_save_{idx}", use_container_width=True):
+                        with st.spinner("保存中..."):
+                            write_claim_note(idx, st.session_state[note_key])
+                        reload(); st.success("保存しました"); st.rerun()

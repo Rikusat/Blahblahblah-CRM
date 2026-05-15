@@ -14,7 +14,9 @@ DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = she
 COL_REPLIED = "返信有無"
 COL_ORDERED = "受注"
 COL_MEMO    = "連携メモ"
-COL_CLAIM   = "クレーム"
+COL_CLAIM      = "クレーム"
+COL_CLAIM_DONE = "対応済み"
+COL_CLAIM_NOTE = "対応内容"
 
 
 def _get_worksheet() -> gspread.Worksheet:
@@ -117,6 +119,16 @@ def write_memo(row_index: int, memo: str) -> None:
 def write_claim(row_index: int) -> None:
     ws = _get_worksheet()
     ws.update_cell(row_index, _col_index(ws, COL_CLAIM), "クレーム")
+
+
+def write_claim_done(row_index: int, value: str) -> None:
+    ws = _get_worksheet()
+    ws.update_cell(row_index, _col_index(ws, COL_CLAIM_DONE), value)
+
+
+def write_claim_note(row_index: int, note: str) -> None:
+    ws = _get_worksheet()
+    ws.update_cell(row_index, _col_index(ws, COL_CLAIM_NOTE), note)
 
 
 def _get_board_ws() -> gspread.Worksheet:
