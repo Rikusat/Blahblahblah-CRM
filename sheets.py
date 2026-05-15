@@ -15,7 +15,7 @@ HEADER_ROW = 1   # 1行目がカラム名
 DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = sheet row番号）
 
 COL_REPLIED = "返信タイプ"
-COL_ORDERED = "受注"
+COL_ORDERED = "受注日"
 COL_MEMO    = "連携メモ"
 COL_CLAIM         = "クレーム日時"
 COL_CLAIM_DONE    = "クレーム対応済み"
