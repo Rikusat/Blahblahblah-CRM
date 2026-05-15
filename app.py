@@ -290,7 +290,7 @@ if page == "ターミナル":
                 st.session_state.pop("show_admin_input", None)
                 st.rerun()
         else:
-            if st.button("🔑 管理者モード解除", use_container_width=True, key="admin_btn"):
+            if st.button("🔑 管理者モード", use_container_width=True, key="admin_btn"):
                 st.session_state["show_admin_input"] = True
 
             if st.session_state.get("show_admin_input"):
