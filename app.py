@@ -152,10 +152,12 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
 
 # 設定シートから全設定を読み込み、アプリ設定キーとフォーム選択肢に分離
 _APP_CONFIG_KEYS = {"月間目標", "テキストエリア列"}
+_TS_FIELD_KEYS   = {COL_ORDERED, COL_CLAIM}   # タイムスタンプ入力フィールド（セレクトボックス化しない）
 _raw_settings: dict[str, list[str]] = load_select_options()
 
 SELECT_OPTIONS: dict[str, list[str]] = {
-    k: v for k, v in _raw_settings.items() if k not in _APP_CONFIG_KEYS
+    k: v for k, v in _raw_settings.items()
+    if k not in _APP_CONFIG_KEYS and k not in _TS_FIELD_KEYS
 }
 TEXTAREA_KEYWORDS: set[str] = (
     set(_raw_settings["テキストエリア列"][1:])
