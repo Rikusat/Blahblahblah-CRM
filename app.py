@@ -101,6 +101,9 @@ hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
 if not check_password():
     st.stop()
 
+if "admin_mode" not in st.session_state:
+    st.session_state["admin_mode"] = True
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
