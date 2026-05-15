@@ -577,9 +577,24 @@ elif page.startswith("顧客一覧"):
                 st.rerun()
         with b2:
             if st.button("🏆 受注", use_container_width=True, key="btn_ordered"):
-                with st.spinner("更新中..."):
-                    write_ordered(selected_idx)
-                reload(); st.success("受注を記録しました"); st.rerun()
+                st.session_state["order_selecting"] = selected_idx
+                st.rerun()
+
+        if st.session_state.get("order_selecting") == selected_idx:
+            st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>受注商品を選択</div>", unsafe_allow_html=True)
+            _order_opts = [v for v in SELECT_OPTIONS.get("受注商品", []) if v]
+            _order_items = [(opt, opt) for opt in _order_opts] + [("✕", "cancel")]
+            for col, (label, value) in zip(st.columns(len(_order_items)), _order_items):
+                with col:
+                    if st.button(label, use_container_width=True, key=f"order_opt_{value}_{selected_idx}"):
+                        if value == "cancel":
+                            st.session_state.pop("order_selecting", None)
+                        else:
+                            with st.spinner("更新中..."):
+                                write_ordered(selected_idx)
+                                write_fields(selected_idx, {"受注商品": value})
+                            st.session_state.pop("order_selecting", None)
+                            reload(); st.success(f"受注（{value}）を記録しました"); st.rerun()
 
         if st.session_state.get("reply_selecting") == selected_idx:
             st.markdown("<div style='font-size:.7rem;color:#adadad;font-family:monospace;letter-spacing:2px;margin:.6rem 0 .3rem;'>返信ステータスを選択</div>", unsafe_allow_html=True)
