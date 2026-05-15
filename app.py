@@ -486,6 +486,19 @@ elif page.startswith("顧客一覧"):
     edit_cols = list(df.columns)
 
     if st.session_state.get("admin_mode"):
+        _claim_key = f"edit_{selected_idx}__{COL_CLAIM}"
+        if COL_CLAIM in df.columns:
+            _ts_col, _ = st.columns([1, 6])
+            with _ts_col:
+                if st.button("📅", key="ts_claim_edit", help=f"{COL_CLAIM} に日付挿入"):
+                    from datetime import datetime as _dt
+                    _current = st.session_state.get(_claim_key, str(row_data.get(COL_CLAIM, "")))
+                    if _current in ("nan", "None"):
+                        _current = ""
+                    _ts = _dt.now().strftime("%Y/%m/%d %H:%M")
+                    st.session_state[_claim_key] = (_current + "\n" + _ts).lstrip("\n")
+                    st.rerun()
+
         with st.form("edit_form"):
             edited = render_fields(edit_cols, defaults=row_data, key_prefix=f"edit_{selected_idx}")
             save = st.form_submit_button("💾 保存", use_container_width=True, type="primary")
