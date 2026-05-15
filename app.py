@@ -147,8 +147,8 @@ def find_col(df: pd.DataFrame, *candidates: str) -> str | None:
 
 SELECT_OPTIONS: dict[str, list[str]] = {
     COL_REPLIED: ["", "返信あり"],
-    "メール済か": ["", "済"],
-    "メール": ["", "済"],
+    "メール済か": ["", "済み"],
+    "メール": ["", "済み"],
 }
 
 def render_fields(columns: list[str], defaults: dict | None = None, key_prefix: str = "") -> dict:
