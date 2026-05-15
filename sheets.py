@@ -118,8 +118,10 @@ def write_memo(row_index: int, memo: str) -> None:
 
 
 def write_claim(row_index: int) -> None:
+    from datetime import datetime
     ws = _get_worksheet()
-    ws.update_cell(row_index, _col_index(ws, COL_CLAIM), "クレーム")
+    ts = datetime.now().strftime("%Y/%m/%d %H:%M")
+    ws.update_cell(row_index, _col_index(ws, COL_CLAIM), ts)
 
 
 def write_claim_done(row_index: int, value: str) -> None:

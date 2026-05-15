@@ -209,8 +209,16 @@ st.sidebar.markdown(
 )
 st.sidebar.markdown("<div style='color:#adadad;font-size:0.65rem;font-family:monospace;letter-spacing:2px;margin-bottom:1rem;'>CRM SYSTEM</div>", unsafe_allow_html=True)
 
+_unresolved = 0
+if not df.empty and COL_CLAIM in df.columns:
+    _has_claim = df[COL_CLAIM].astype(str).str.strip().ne("").replace({"nan": False}, regex=False)
+    _done_mask = df[COL_CLAIM_DONE].astype(str).str.strip().eq("対応済み") if COL_CLAIM_DONE in df.columns else pd.Series(False, index=df.index)
+    _unresolved = int((_has_claim & ~_done_mask).sum())
+
+_claim_label = f"クレーム  🔴{_unresolved}" if _unresolved > 0 else "クレーム"
+
 page = st.sidebar.radio(
-    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト", "クレーム"],
+    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト", _claim_label],
     label_visibility="collapsed",
 )
 
@@ -439,7 +447,7 @@ elif page == "ダッシュボード":
 # Customer list
 # ---------------------------------------------------------------------------
 
-elif page == "顧客一覧":
+elif page.startswith("顧客一覧"):
     st.title("CUSTOMERS")
 
     if df.empty:
@@ -479,10 +487,8 @@ elif page == "顧客一覧":
     selected_idx = st.selectbox("レコードを選択", list(option_labels.keys()), format_func=lambda x: option_labels[x], key="customer_select")
     row_data = df.loc[selected_idx].to_dict()
 
-    # 受注 はボタン管理のため編集フォームから除外
-    exclude = set()
-    if COL_ORDERED in df.columns:
-        exclude.add(COL_ORDERED)
+    # 受注・クレーム系はボタン管理のため編集フォームから除外
+    exclude = {COL_ORDERED, COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE}
     edit_cols = [c for c in df.columns if c not in exclude]
 
     if st.session_state.get("admin_mode"):
@@ -684,7 +690,7 @@ elif page == "受注リスト":
 # クレーム
 # ---------------------------------------------------------------------------
 
-elif page == "クレーム":
+elif page.startswith("クレーム"):
     st.title("CLAIMS")
 
     if df.empty:
@@ -695,7 +701,9 @@ elif page == "クレーム":
         st.warning(f"「{COL_CLAIM}」列がスプレッドシートに存在しません。")
         st.stop()
 
-    claims = df[df[COL_CLAIM].astype(str).str.contains("クレーム", na=False)]
+    _claim_nonempty = df[COL_CLAIM].astype(str).str.strip().replace("nan", "").ne("")
+    claims = df[_claim_nonempty].copy()
+    claims = claims.sort_values(COL_CLAIM, ascending=False)
 
     st.caption(f"クレーム：{len(claims)} 件")
 
