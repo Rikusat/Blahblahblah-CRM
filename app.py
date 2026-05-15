@@ -24,7 +24,7 @@ st.markdown("""
 }
 [data-testid="stSidebar"] .stRadio label {
     font-family: monospace;
-    color: #aaa;
+    color: #ddd;
     font-size: 0.85rem;
     letter-spacing: 1px;
 }
@@ -40,14 +40,14 @@ h2, h3 { color: #cc7000 !important; font-family: monospace !important; }
     border-radius: 6px;
     padding: 1rem 1.2rem;
 }
-[data-testid="stMetricLabel"] p  { color: #555 !important; font-size: 0.7rem !important; text-transform: uppercase; letter-spacing: 2px; font-family: monospace; }
+[data-testid="stMetricLabel"] p  { color: #bbb !important; font-size: 0.7rem !important; text-transform: uppercase; letter-spacing: 2px; font-family: monospace; }
 [data-testid="stMetricValue"]    { color: #FF8C00 !important; font-family: monospace !important; }
-[data-testid="stMetricDelta"]    { color: #888 !important; }
+[data-testid="stMetricDelta"]    { color: #cfcfcf !important; }
 
 /* ── Buttons ── */
 .stButton > button {
     background: #111; border: 1px solid #2a2a2a;
-    color: #ccc; font-family: monospace;
+    color: #eaeaea; font-family: monospace;
     border-radius: 3px; transition: all .15s;
 }
 .stButton > button:hover { border-color: #FF8C00; color: #FF8C00; background: #0d0d0d; }
@@ -62,7 +62,7 @@ h2, h3 { color: #cc7000 !important; font-family: monospace !important; }
     color: #d4d4d4 !important; font-family: monospace !important;
     border-radius: 4px !important;
 }
-.stTextArea textarea::placeholder { color: #444 !important; }
+.stTextArea textarea::placeholder { color: #b4b4b4 !important; }
 
 /* ── Progress ── */
 .stProgress > div > div > div > div { background: #FF8C00 !important; }
@@ -80,7 +80,7 @@ h2, h3 { color: #cc7000 !important; font-family: monospace !important; }
 hr { border-color: #1a1a1a !important; margin: 1.5rem 0 !important; }
 
 /* ── Caption / small text ── */
-.stCaption p { color: #444 !important; font-family: monospace !important; font-size: 0.75rem !important; }
+.stCaption p { color: #b4b4b4 !important; font-family: monospace !important; font-size: 0.75rem !important; }
 
 /* ── Radio ── */
 .stRadio > div { gap: 0.4rem; }
@@ -185,7 +185,7 @@ st.sidebar.markdown(
     "<div style='padding:1.2rem 0 0.4rem;font-size:1.3rem;font-family:monospace;color:#FF8C00;font-weight:700;letter-spacing:3px;'>◈ OCTAIL</div>",
     unsafe_allow_html=True,
 )
-st.sidebar.markdown("<div style='color:#333;font-size:0.65rem;font-family:monospace;letter-spacing:2px;margin-bottom:1rem;'>CRM SYSTEM</div>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='color:#adadad;font-size:0.65rem;font-family:monospace;letter-spacing:2px;margin-bottom:1rem;'>CRM SYSTEM</div>", unsafe_allow_html=True)
 
 page = st.sidebar.radio(
     "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト"],
@@ -196,7 +196,7 @@ st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_a
 
 admin_label = "🔓 ADMIN" if st.session_state.get("admin_mode") else "🔒 VIEWER"
 st.sidebar.markdown(
-    f"<div style='color:#{'FF8C00' if st.session_state.get('admin_mode') else '444'};font-family:monospace;font-size:.7rem;letter-spacing:2px;padding:.2rem 0;'>{admin_label}</div>",
+    f"<div style='color:#{'FF8C00' if st.session_state.get('admin_mode') else 'b4b4b4'};font-family:monospace;font-size:.7rem;letter-spacing:2px;padding:.2rem 0;'>{admin_label}</div>",
     unsafe_allow_html=True,
 )
 
@@ -225,7 +225,7 @@ if page == "ターミナル":
     with col_l:
         st.markdown("""
 <div style="padding: 2rem 0 1rem;">
-  <div id="oct-date" style="font-size:1rem;color:#555;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;"></div>
+  <div id="oct-date" style="font-size:1rem;color:#bbbbbb;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;"></div>
   <div id="oct-time" style="font-size:4.5rem;font-weight:700;color:#FF8C00;font-family:monospace;letter-spacing:6px;line-height:1;"></div>
 </div>
 <script>
@@ -256,7 +256,7 @@ if page == "ターミナル":
             if len(df.columns) >= 9:
                 replied_count = int(df[df.columns[8]].astype(str).str.contains("返信あり", na=False).sum())
 
-            st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>QUICK STATS</div>", unsafe_allow_html=True)
+            st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>QUICK STATS</div>", unsafe_allow_html=True)
             sc1, sc2, sc3 = st.columns(3)
             sc1.metric("顧客総数", len(df))
             sc2.metric("返信あり", replied_count)
@@ -264,7 +264,7 @@ if page == "ターミナル":
 
     with col_r:
         st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>MEMO</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>MEMO</div>", unsafe_allow_html=True)
 
         if "terminal_memo" not in st.session_state:
             st.session_state["terminal_memo"] = ""
@@ -278,7 +278,7 @@ if page == "ターミナル":
         )
 
         st.markdown("<div style='height:.5rem;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>ADMIN</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>ADMIN</div>", unsafe_allow_html=True)
 
         if st.session_state.get("admin_mode"):
             st.markdown(
@@ -500,7 +500,7 @@ elif page == "見込み":
                         display_text = memo_val if is_expanded else memo_val[:150]
                         ellipsis = "" if is_expanded or len(memo_val) <= 150 else "…"
                         st.markdown(
-                            f"<div style='color:#666;font-family:monospace;font-size:.78rem;"
+                            f"<div style='color:#c2c2c2;font-family:monospace;font-size:.78rem;"
                             f"padding-top:.5rem;white-space:pre-wrap;'>{display_text}{ellipsis}</div>",
                             unsafe_allow_html=True,
                         )
