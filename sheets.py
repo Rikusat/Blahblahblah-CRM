@@ -80,10 +80,7 @@ def _get_deleted_ws() -> gspread.Worksheet:
     )
     client = gspread.authorize(creds)
     sh = client.open_by_key(st.secrets["sheets"]["spreadsheet_id"])
-    try:
-        return sh.worksheet("削除")
-    except gspread.WorksheetNotFound:
-        return sh.add_worksheet(title="削除", rows=1000, cols=30)
+    return sh.worksheet("削除")
 
 
 def archive_and_delete_row(row_index: int) -> None:
