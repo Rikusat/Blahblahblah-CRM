@@ -188,6 +188,12 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_allow_html=True)
 
+if st.session_state.get("admin_mode"):
+    st.sidebar.markdown(
+        "<div style='color:#FF8C00;font-family:monospace;font-size:.72rem;letter-spacing:2px;padding:.3rem 0;'>🔓 ADMIN MODE</div>",
+        unsafe_allow_html=True,
+    )
+
 if st.sidebar.button("⟳  データ更新", use_container_width=True):
     reload()
     st.rerun()
@@ -260,10 +266,36 @@ if page == "ターミナル":
         st.text_area(
             "",
             placeholder="Take a note...",
-            height=280,
+            height=220,
             key="terminal_memo",
             label_visibility="collapsed",
         )
+
+        st.markdown("<div style='height:.5rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-size:.65rem;color:#333;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>ADMIN</div>", unsafe_allow_html=True)
+
+        if st.session_state.get("admin_mode"):
+            st.markdown(
+                "<div style='color:#FF8C00;font-family:monospace;font-size:.8rem;letter-spacing:2px;margin-bottom:.5rem;'>🔓 管理者モード中</div>",
+                unsafe_allow_html=True,
+            )
+            if st.button("🔒 ロック", use_container_width=True, key="admin_lock"):
+                st.session_state["admin_mode"] = False
+                st.session_state.pop("show_admin_input", None)
+                st.rerun()
+        else:
+            if st.button("🔑 管理者モード解除", use_container_width=True, key="admin_btn"):
+                st.session_state["show_admin_input"] = True
+
+            if st.session_state.get("show_admin_input"):
+                admin_pw = st.text_input("管理者パスワード", type="password", key="admin_pw_input", label_visibility="collapsed", placeholder="管理者パスワード")
+                if st.button("解除", use_container_width=True, key="admin_unlock_btn", type="primary"):
+                    if admin_pw == st.secrets["app"].get("admin_password", ""):
+                        st.session_state["admin_mode"] = True
+                        st.session_state["show_admin_input"] = False
+                        st.rerun()
+                    else:
+                        st.error("パスワードが違います")
 
 # ---------------------------------------------------------------------------
 # Dashboard
@@ -363,20 +395,23 @@ elif page == "顧客一覧":
     )
     edit_cols = [c for c in df.columns if c not in EXCLUDE_COLS]
 
-    with st.form("edit_form"):
-        edited = render_fields(edit_cols, defaults=row_data, key_prefix=f"edit_{selected_idx}")
-        c1, c2 = st.columns(2)
-        save   = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
-        delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
+    if st.session_state.get("admin_mode"):
+        with st.form("edit_form"):
+            edited = render_fields(edit_cols, defaults=row_data, key_prefix=f"edit_{selected_idx}")
+            c1, c2 = st.columns(2)
+            save   = c1.form_submit_button("💾 保存", use_container_width=True, type="primary")
+            delete = c2.form_submit_button("🗑️ 削除", use_container_width=True)
 
-    if save:
-        with st.spinner("保存中..."):
-            update_row(selected_idx, edited)
-        reload(); st.success("保存しました"); st.rerun()
-    if delete:
-        with st.spinner("削除中..."):
-            delete_row(selected_idx)
-        reload(); st.success("削除しました"); st.rerun()
+        if save:
+            with st.spinner("保存中..."):
+                update_row(selected_idx, edited)
+            reload(); st.success("保存しました"); st.rerun()
+        if delete:
+            with st.spinner("削除中..."):
+                delete_row(selected_idx)
+            reload(); st.success("削除しました"); st.rerun()
+    else:
+        st.caption("🔒 編集・削除は管理者モードで行えます")
 
     b1, b2 = st.columns(2)
     with b1:
