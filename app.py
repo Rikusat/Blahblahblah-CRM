@@ -734,7 +734,7 @@ elif page == "受注リスト":
         st.warning(f"「{COL_ORDERED}」列がスプレッドシートに存在しません。")
         st.stop()
 
-    orders = df[df[COL_ORDERED].astype(str).str.contains("受注", na=False)]
+    orders = df[df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("")]
 
     st.caption(f"受注：{len(orders)} 件")
 
@@ -742,7 +742,38 @@ elif page == "受注リスト":
         st.info("受注済みの顧客はまだいません。")
         st.stop()
 
-    st.dataframe(orders, use_container_width=True)
+    name_col    = find_col(orders, "事業所名", "会社名", "担当者名", "名前")
+    ind_col     = find_col(orders, "業種")
+    person_col  = find_col(orders, "担当者名", "担当者名/代表者名", "代表者名")
+    email_col   = find_col(orders, "メールアドレス", "メール")
+    url_col     = find_col(orders, "URL", "url", "ウェブサイト")
+    product_col = find_col(orders, "受注商品")
+
+    cols = st.columns(N_CARDS_PER_ROW, gap="large")
+    for n_row, (idx, row) in enumerate(orders.iterrows()):
+        i = n_row % N_CARDS_PER_ROW
+        if i == 0 and n_row > 0:
+            cols = st.columns(N_CARDS_PER_ROW, gap="large")
+        with cols[i]:
+            with st.container(border=True):
+                if name_col:
+                    st.markdown(f"**{row[name_col]}**")
+                ordered_val = str(row[COL_ORDERED]).strip()
+                if ordered_val and ordered_val not in ("nan", "None"):
+                    st.caption(f"🏆 {ordered_val}")
+                if product_col:
+                    prod = str(row[product_col]).strip()
+                    if prod and prod not in ("nan", "None"):
+                        st.caption(f"📦 {prod}")
+                if ind_col:
+                    st.caption(f"🏢 {row[ind_col]}")
+                if person_col and person_col != name_col:
+                    st.markdown(f"👤 {row[person_col]}")
+                if email_col and row[email_col]:
+                    st.markdown(f"📧 {row[email_col]}")
+                if url_col and row[url_col]:
+                    url = str(row[url_col]).strip()
+                    st.markdown(f"🔗 [{url}]({url})")
 
 # ---------------------------------------------------------------------------
 # クレーム
