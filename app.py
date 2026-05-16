@@ -707,7 +707,7 @@ elif page == "見込み":
                 if _next_act:
                     st.markdown(
                         f"<div style='font-size:.65rem;font-family:monospace;color:#7ab3ff;"
-                        f"margin-bottom:.2rem;'>📅 {_next_act}</div>",
+                        f"margin-bottom:.2rem;'>次回アクション {_next_act}</div>",
                         unsafe_allow_html=True,
                     )
 
