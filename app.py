@@ -755,11 +755,7 @@ elif page == "見込み":
                     # 担当者引き受けUI
                     st.markdown("<div style='border-top:1px solid #1e1e1e;margin:.3rem 0 .2rem;'></div>", unsafe_allow_html=True)
                     if _assignee:
-                        st.markdown(
-                            f"<div style='font-size:.7rem;font-family:monospace;color:#2FFFB4;'>"
-                            f"👤 担当：{_assignee}　<span style='color:#555;font-size:.6rem;'>（変更不可）</span></div>",
-                            unsafe_allow_html=True,
-                        )
+                        pass
                     elif st.session_state.get(_assign_key):
                         _assignee_opts = [v for v in SELECT_OPTIONS.get(COL_ASSIGNEE, []) if v]
                         if _assignee_opts:
