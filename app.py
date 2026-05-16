@@ -672,10 +672,11 @@ elif page == "見込み":
             cols = st.columns(N_CARDS_PER_ROW, gap="small")
         with cols[i]:
             with st.container(border=True):
-                _name       = _val(row, name_col) or f"#{idx}"
-                _replied    = _val(row, COL_REPLIED)
-                _claim      = _val(row, COL_CLAIM)
-                _next_act   = _val(row, next_action_col)
+                _name        = _val(row, name_col) or f"#{idx}"
+                _replied     = _val(row, COL_REPLIED)
+                _claim       = _val(row, COL_CLAIM)
+                _next_act    = _val(row, next_action_col)
+                _replied_at  = _val(row, COL_REPLIED_AT)
 
                 st.markdown(
                     f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
@@ -697,6 +698,12 @@ elif page == "見込み":
                     )
                 if _pills:
                     st.markdown(f"<div style='margin-bottom:.2rem;'>{_pills}</div>", unsafe_allow_html=True)
+                if _replied_at:
+                    st.markdown(
+                        f"<div style='font-size:.65rem;font-family:monospace;color:#888;"
+                        f"margin-bottom:.2rem;'>返信日時 {_replied_at}</div>",
+                        unsafe_allow_html=True,
+                    )
                 if _next_act:
                     st.markdown(
                         f"<div style='font-size:.65rem;font-family:monospace;color:#7ab3ff;"
