@@ -786,7 +786,7 @@ elif page == "見込み":
                             st.session_state[_det_key] = True
                             st.rerun()
 
-                    if st.button("📝 メモ編集", key=f"mikomi_edit_{idx}", use_container_width=True):
+                    if st.button("✏️", key=f"mikomi_edit_{idx}", use_container_width=True):
                         st.session_state["mikomi_editing_idx"] = idx
                         st.rerun()
 
