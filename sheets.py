@@ -17,6 +17,7 @@ DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = she
 
 COL_REPLIED    = "返信タイプ"
 COL_REPLIED_AT = "返信日時"
+COL_ASSIGNEE   = "担当者"
 COL_ORDERED = "受注日"
 COL_MEMO    = "連携メモ"
 COL_CLAIM         = "クレーム日時"
@@ -117,6 +118,11 @@ def _safe_update(ws: gspread.Worksheet, row_index: int, col_name: str, value: st
     cell = rowcol_to_a1(row_index, col)
     ws.update([[str(value)]], cell)
     return True
+
+
+def write_assignee(row_index: int, value: str) -> None:
+    ws = _get_worksheet()
+    _safe_update(ws, row_index, COL_ASSIGNEE, value)
 
 
 def write_replied(row_index: int, value: str = "返信あり") -> None:

@@ -6,9 +6,10 @@ from sheets import (
     get_dataframe, update_row, add_row, delete_row, archive_and_delete_row,
     write_replied, write_ordered, write_memo, write_fields,
     write_claim, write_claim_done, write_claim_content, write_claim_note,
+    write_assignee,
     get_board, set_board, get_select_options,
     DATA_OFFSET, COL_REPLIED, COL_REPLIED_AT, COL_ORDERED, COL_MEMO,
-    COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE,
+    COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE, COL_ASSIGNEE,
 )
 
 st.set_page_config(page_title="Octail", page_icon="🟠", layout="wide")
@@ -677,6 +678,7 @@ elif page == "見込み":
                 _claim       = _val(row, COL_CLAIM)
                 _next_act    = _val(row, next_action_col)
                 _replied_at  = _val(row, COL_REPLIED_AT)
+                _assignee    = _val(row, COL_ASSIGNEE) if COL_ASSIGNEE in row.index else ""
 
                 st.markdown(
                     f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
@@ -710,11 +712,22 @@ elif page == "見込み":
                         f"margin-bottom:.2rem;'>次回アクション {_next_act}</div>",
                         unsafe_allow_html=True,
                     )
+                if _assignee:
+                    st.markdown(
+                        f"<div style='font-size:.65rem;font-family:monospace;color:#2FFFB4;"
+                        f"margin-bottom:.2rem;'>👤 担当：{_assignee}</div>",
+                        unsafe_allow_html=True,
+                    )
 
-                _det_key = f"det_mikomi_{idx}"
-                _is_open = st.session_state.get(_det_key, False)
+                _det_key    = f"det_mikomi_{idx}"
+                _assign_key = f"assigning_{idx}"
+                _is_open    = st.session_state.get(_det_key, False) or st.session_state.get(_assign_key, False)
                 if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_mikomi_{idx}", use_container_width=True):
-                    st.session_state[_det_key] = not _is_open
+                    if _is_open:
+                        st.session_state[_det_key] = False
+                        st.session_state.pop(_assign_key, None)
+                    else:
+                        st.session_state[_det_key] = True
                     st.rerun()
 
                 if _is_open:
@@ -739,6 +752,40 @@ elif page == "見込み":
                                 f"white-space:pre-wrap;'>{_memo[:200]}{'…' if len(_memo) > 200 else ''}</div>",
                                 unsafe_allow_html=True,
                             )
+                    # 担当者引き受けUI
+                    st.markdown("<div style='border-top:1px solid #1e1e1e;margin:.3rem 0 .2rem;'></div>", unsafe_allow_html=True)
+                    if _assignee:
+                        st.markdown(
+                            f"<div style='font-size:.7rem;font-family:monospace;color:#2FFFB4;'>"
+                            f"👤 担当：{_assignee}　<span style='color:#555;font-size:.6rem;'>（変更不可）</span></div>",
+                            unsafe_allow_html=True,
+                        )
+                    elif st.session_state.get(_assign_key):
+                        _assignee_opts = [v for v in SELECT_OPTIONS.get(COL_ASSIGNEE, []) if v]
+                        if _assignee_opts:
+                            _sel = st.selectbox("担当者を選択", _assignee_opts, key=f"assignee_sel_{idx}", label_visibility="collapsed")
+                            _ac1, _ac2 = st.columns(2)
+                            with _ac1:
+                                if st.button("✅ 引き受ける", key=f"assignee_confirm_{idx}", type="primary", use_container_width=True):
+                                    with st.spinner("保存中..."):
+                                        write_assignee(idx, _sel)
+                                    st.session_state.pop(_assign_key, None)
+                                    reload(); st.success(f"担当：{_sel}"); st.rerun()
+                            with _ac2:
+                                if st.button("✕ キャンセル", key=f"assignee_cancel_{idx}", use_container_width=True):
+                                    st.session_state.pop(_assign_key, None)
+                                    st.rerun()
+                        else:
+                            st.caption("設定シートに担当者リストがありません")
+                            if st.button("✕", key=f"assignee_cancel_{idx}", use_container_width=True):
+                                st.session_state.pop(_assign_key, None)
+                                st.rerun()
+                    else:
+                        if st.button("🙋 担当者引き受け", key=f"assignee_btn_{idx}", use_container_width=True):
+                            st.session_state[_assign_key] = True
+                            st.session_state[_det_key] = True
+                            st.rerun()
+
                     if st.button("📝 メモ編集", key=f"mikomi_edit_{idx}", use_container_width=True):
                         st.session_state["mikomi_editing_idx"] = idx
                         st.rerun()
