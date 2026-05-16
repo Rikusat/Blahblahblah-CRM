@@ -719,15 +719,14 @@ elif page == "見込み":
                         unsafe_allow_html=True,
                     )
 
-                _det_key    = f"det_mikomi_{idx}"
                 _assign_key = f"assigning_{idx}"
-                _is_open    = st.session_state.get(_det_key, False) or st.session_state.get(_assign_key, False)
+                _is_open    = (st.session_state.get("det_mikomi_open") == idx) or st.session_state.get(_assign_key, False)
                 if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_mikomi_{idx}", use_container_width=True):
                     if _is_open:
-                        st.session_state[_det_key] = False
+                        st.session_state["det_mikomi_open"] = None
                         st.session_state.pop(_assign_key, None)
                     else:
-                        st.session_state[_det_key] = True
+                        st.session_state["det_mikomi_open"] = idx
                     st.rerun()
 
                 if _is_open:
@@ -779,7 +778,7 @@ elif page == "見込み":
                     else:
                         if st.button("🙋 担当者引き受け", key=f"assignee_btn_{idx}", use_container_width=True):
                             st.session_state[_assign_key] = True
-                            st.session_state[_det_key] = True
+                            st.session_state["det_mikomi_open"] = idx
                             st.rerun()
 
                     if st.button("✏️", key=f"mikomi_edit_{idx}", use_container_width=True):
@@ -899,10 +898,9 @@ elif page == "受注リスト":
                 if _pills:
                     st.markdown(f"<div style='margin-bottom:.2rem;'>{_pills}</div>", unsafe_allow_html=True)
 
-                _det_key = f"det_order_{idx}"
-                _is_open = st.session_state.get(_det_key, False)
+                _is_open = (st.session_state.get("det_order_open") == idx)
                 if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_order_{idx}", use_container_width=True):
-                    st.session_state[_det_key] = not _is_open
+                    st.session_state["det_order_open"] = None if _is_open else idx
                     st.rerun()
 
                 if _is_open:
@@ -978,16 +976,16 @@ elif page.startswith("クレーム"):
                 )
 
                 _is_editing = st.session_state.get(f"claim_editing_{idx}", False)
-                _is_detail  = st.session_state.get(f"det_claim_{idx}", False)
+                _is_detail  = (st.session_state.get("det_claim_open") == idx)
                 _show       = _is_detail or _is_editing
 
                 if st.button("閉じる ▲" if _show else "詳細 ▼", key=f"det_btn_claim_{idx}", use_container_width=True):
                     if _show:
-                        st.session_state[f"det_claim_{idx}"] = False
+                        st.session_state["det_claim_open"] = None
                         for _k in (f"claim_editing_{idx}", f"claim_edit_content_{idx}", f"claim_edit_note_{idx}", f"claim_edit_done_{idx}"):
                             st.session_state.pop(_k, None)
                     else:
-                        st.session_state[f"det_claim_{idx}"] = True
+                        st.session_state["det_claim_open"] = idx
                     st.rerun()
 
                 if _show:
