@@ -343,7 +343,7 @@ if page == "ターミナル":
                 "<div style='color:#FF8C00;font-family:monospace;font-size:.8rem;letter-spacing:2px;margin-bottom:.5rem;'>🔓 管理者モード中</div>",
                 unsafe_allow_html=True,
             )
-            if st.button("🔒 ロック", use_container_width=True, key="admin_lock"):
+            if st.button("→ 管理者ログアウト", use_container_width=True, key="admin_lock"):
                 st.session_state["admin_mode"] = False
                 st.session_state.pop("show_admin_input", None)
                 st.rerun()
