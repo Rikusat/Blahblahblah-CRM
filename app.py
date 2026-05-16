@@ -353,7 +353,7 @@ if page == "ターミナル":
 
             if st.session_state.get("show_admin_input"):
                 admin_pw = st.text_input("管理者パスワード", type="password", key="admin_pw_input", label_visibility="collapsed", placeholder="管理者パスワード")
-                if st.button("解除", use_container_width=True, key="admin_unlock_btn", type="primary"):
+                if st.button("ログイン", use_container_width=True, key="admin_unlock_btn", type="primary"):
                     if admin_pw == st.secrets["app"].get("admin_password", ""):
                         st.session_state["admin_mode"] = True
                         st.session_state["show_admin_input"] = False
