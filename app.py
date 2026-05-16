@@ -888,7 +888,7 @@ elif page == "受注リスト":
                     _pills += (
                         f"<span style='font-size:.6rem;background:#001a00;border:1px solid #002a00;"
                         f"border-radius:3px;padding:.1rem .35rem;color:#2FFFB4;font-family:monospace;"
-                        f"margin-right:.25rem;'>🏆 {_ordered}</span>"
+                        f"margin-right:.25rem;'>🏆 受注日時 {_ordered}</span>"
                     )
                 if _prod:
                     _pills += (
