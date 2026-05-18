@@ -15,8 +15,9 @@ SCOPES = [
 HEADER_ROW = 1   # 1行目がカラム名
 DATA_OFFSET = 2  # データはシートの2行目から（DataFrame index = sheet row番号）
 
-COL_REPLIED    = "返信タイプ"
-COL_REPLIED_AT = "返信日時"
+COL_REPLIED        = "返信タイプ"
+COL_REPLIED_AT     = "返信日時"
+COL_REPLY_STATUS   = "返信状態"
 COL_ASSIGNEE   = "担当者"
 COL_ORDERED = "受注日"
 COL_MEMO    = "連携メモ"
@@ -133,6 +134,7 @@ def write_replied(row_index: int, value: str = "返信あり") -> None:
     if not ok:
         headers = ws.row_values(HEADER_ROW)
         raise ValueError(f"列「{COL_REPLIED_AT}」が見つかりません。実際のヘッダー: {headers}")
+    _safe_update(ws, row_index, COL_REPLY_STATUS, "未返信")
 
 
 def write_ordered(row_index: int) -> None:
