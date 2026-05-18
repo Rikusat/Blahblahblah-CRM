@@ -764,6 +764,13 @@ elif page == "見込み":
                                 f"white-space:pre-wrap;margin-bottom:.2rem;'>{_claim_content[:200]}{'…' if len(_claim_content) > 200 else ''}</div>",
                                 unsafe_allow_html=True,
                             )
+                        _claim_note = _val(row, COL_CLAIM_NOTE) if COL_CLAIM_NOTE in row.index else ""
+                        if _claim_note:
+                            st.markdown(
+                                f"<div style='color:#c2744a;font-family:monospace;font-size:.72rem;"
+                                f"white-space:pre-wrap;margin-bottom:.2rem;'>対応：{_claim_note[:200]}{'…' if len(_claim_note) > 200 else ''}</div>",
+                                unsafe_allow_html=True,
+                            )
                     if memo_col:
                         _memo = _val(row, memo_col)
                         if _memo:
