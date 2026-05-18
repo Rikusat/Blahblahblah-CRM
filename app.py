@@ -314,12 +314,6 @@ page = st.sidebar.radio(
 
 st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_allow_html=True)
 
-admin_label = "🔓 ADMIN" if st.session_state.get("admin_mode") else "🔒 VIEWER"
-st.sidebar.markdown(
-    f"<div style='color:#{'FF8C00' if st.session_state.get('admin_mode') else 'b4b4b4'};font-family:monospace;font-size:.7rem;letter-spacing:2px;padding:.2rem 0;'>{admin_label}</div>",
-    unsafe_allow_html=True,
-)
-
 if st.sidebar.button("⟳  データ更新", use_container_width=True):
     reload()
     st.rerun()
@@ -327,6 +321,30 @@ if st.sidebar.button("⟳  データ更新", use_container_width=True):
 if st.sidebar.button("→  ログアウト", use_container_width=True):
     logout()
     st.rerun()
+
+st.sidebar.markdown("<hr style='border-color:#1a1a1a;margin:1rem 0;'>", unsafe_allow_html=True)
+st.sidebar.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>ADMIN</div>", unsafe_allow_html=True)
+if st.session_state.get("admin_mode"):
+    st.sidebar.markdown(
+        "<div style='color:#FF8C00;font-family:monospace;font-size:.8rem;letter-spacing:2px;margin-bottom:.5rem;'>🔓 管理者モード中</div>",
+        unsafe_allow_html=True,
+    )
+    if st.sidebar.button("管理者ログアウト", use_container_width=True, key="admin_lock"):
+        st.session_state["admin_mode"] = False
+        st.session_state.pop("show_admin_input", None)
+        st.rerun()
+else:
+    if st.sidebar.button("🔑 管理者モード", use_container_width=True, key="admin_btn"):
+        st.session_state["show_admin_input"] = True
+    if st.session_state.get("show_admin_input"):
+        admin_pw = st.sidebar.text_input("管理者パスワード", type="password", key="admin_pw_input", label_visibility="collapsed", placeholder="管理者パスワード")
+        if st.sidebar.button("ログイン", use_container_width=True, key="admin_unlock_btn", type="primary"):
+            if admin_pw == st.secrets["app"].get("admin_password", ""):
+                st.session_state["admin_mode"] = True
+                st.session_state["show_admin_input"] = False
+                st.rerun()
+            else:
+                st.sidebar.error("パスワードが違います")
 
 # ---------------------------------------------------------------------------
 # ターミナル
@@ -376,31 +394,6 @@ if page == "ターミナル":
             label_visibility="collapsed",
         )
 
-        st.markdown("<div style='height:.5rem;'></div>", unsafe_allow_html=True)
-        st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.5rem;'>ADMIN</div>", unsafe_allow_html=True)
-
-        if st.session_state.get("admin_mode"):
-            st.markdown(
-                "<div style='color:#FF8C00;font-family:monospace;font-size:.8rem;letter-spacing:2px;margin-bottom:.5rem;'>🔓 管理者モード中</div>",
-                unsafe_allow_html=True,
-            )
-            if st.button("管理者ログアウト", use_container_width=True, key="admin_lock"):
-                st.session_state["admin_mode"] = False
-                st.session_state.pop("show_admin_input", None)
-                st.rerun()
-        else:
-            if st.button("🔑 管理者モード", use_container_width=True, key="admin_btn"):
-                st.session_state["show_admin_input"] = True
-
-            if st.session_state.get("show_admin_input"):
-                admin_pw = st.text_input("管理者パスワード", type="password", key="admin_pw_input", label_visibility="collapsed", placeholder="管理者パスワード")
-                if st.button("ログイン", use_container_width=True, key="admin_unlock_btn", type="primary"):
-                    if admin_pw == st.secrets["app"].get("admin_password", ""):
-                        st.session_state["admin_mode"] = True
-                        st.session_state["show_admin_input"] = False
-                        st.rerun()
-                    else:
-                        st.error("パスワードが違います")
 
     # ── 掲示板 ────────────────────────────────────────────────────
     st.divider()
