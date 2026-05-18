@@ -244,8 +244,12 @@ if not df.empty and COL_CLAIM in df.columns:
 
 _claim_label = f"クレーム  🔴{_unresolved}" if _unresolved > 0 else "クレーム"
 
+_pages = ["ターミナル", "顧客一覧", "見込み", "受注リスト", _claim_label]
+if st.session_state.get("admin_mode"):
+    _pages.insert(1, "ダッシュボード")
+
 page = st.sidebar.radio(
-    "", ["ターミナル", "ダッシュボード", "顧客一覧", "見込み", "受注リスト", _claim_label],
+    "", _pages,
     label_visibility="collapsed",
 )
 
@@ -418,6 +422,10 @@ if page == "ターミナル":
 # ---------------------------------------------------------------------------
 
 elif page == "ダッシュボード":
+    if not st.session_state.get("admin_mode"):
+        st.warning("ダッシュボードは管理者専用です。")
+        st.stop()
+
     st.title("DASHBOARD")
 
     if df.empty:
