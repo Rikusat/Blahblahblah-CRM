@@ -511,9 +511,6 @@ elif page == "ダッシュボード":
 
     st.divider()
 
-    c4, c5, c6 = st.columns(3)
-    c4.metric("総顧客数", len(df))
-
     email_sent_col = next(
         (c for c in df.columns if "メール" in c and any(k in c for k in ["済", "送信", "フラグ"])), None,
     )
@@ -537,6 +534,7 @@ elif page == "ダッシュボード":
 
 elif page.startswith("顧客一覧"):
     st.title("CUSTOMERS")
+    st.caption(f"総顧客数：{len(df)} 件")
 
     if df.empty:
         st.info("データがありません。")
