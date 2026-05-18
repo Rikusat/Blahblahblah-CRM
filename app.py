@@ -135,7 +135,7 @@ def load_data() -> pd.DataFrame:
 def load_board_data(board_type: str) -> dict:
     return get_board(board_type)
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def load_select_options() -> dict:
     return get_select_options()
 
@@ -191,7 +191,9 @@ def _mikomi_edit_modal(editing_idx: int, df: pd.DataFrame, label: str) -> None:
         _rs_index = _rs_opts.index(_rs_cur) if _rs_cur in _rs_opts else 0
         st.selectbox("返信状態", _rs_opts, index=_rs_index, key=f"mikomi_rs_{editing_idx}")
 
-    _textarea_cols = [c for c in df.columns if c in TEXTAREA_KEYWORDS]
+    _cur_settings   = load_select_options()
+    _cur_ta_keys    = set(_cur_settings.get("テキストエリア列", [])[1:]) or TEXTAREA_KEYWORDS
+    _textarea_cols  = [c for c in df.columns if c in _cur_ta_keys]
     for _col in _textarea_cols:
         _fkey = f"mikomi_field_{editing_idx}_{_col}"
         _pkey = f"mikomi_field_pending_{editing_idx}_{_col}"
