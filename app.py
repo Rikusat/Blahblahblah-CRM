@@ -360,22 +360,6 @@ if page == "ターミナル":
 
         st.markdown("<div style='height:2rem;'></div>", unsafe_allow_html=True)
 
-        # Quick stats
-        if not df.empty:
-            monthly_target = _MONTHLY_TARGET
-            ordered_count = 0
-            if COL_ORDERED in df.columns:
-                ordered_count = int(df[COL_ORDERED].astype(str).str.strip().replace("nan", "").ne("").sum())
-
-            st.markdown("<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>QUICK STATS</div>", unsafe_allow_html=True)
-            target_color = "#2FFFB4" if ordered_count >= monthly_target else "#EC2D01"
-            st.markdown(
-                f"<div style='background:#111;border:1px solid #1e1e1e;border-radius:6px;padding:1rem 1.2rem;'>"
-                f"<div style='color:#bbb;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;font-family:monospace;margin-bottom:.3rem;'>受注 / 目標</div>"
-                f"<div style='color:{target_color};font-family:monospace;font-size:1.8rem;font-weight:700;line-height:1;'>{ordered_count} / {monthly_target}</div>"
-                f"</div>",
-                unsafe_allow_html=True,
-            )
 
     with col_r:
         st.markdown("<div style='height:1rem;'></div>", unsafe_allow_html=True)
