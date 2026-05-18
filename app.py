@@ -843,7 +843,7 @@ elif page == "見込み":
                 _rs_val = st.session_state.get(f"mikomi_rs_{editing_idx}")
                 if _rs_val and COL_REPLY_STATUS in df.columns:
                     _save_data[COL_REPLY_STATUS] = _rs_val
-                    if _rs_val == "未返信" and COL_REPLIED_AT in df.columns:
+                    if _rs_val == "返信済み" and COL_REPLIED_AT in df.columns:
                         _save_data[COL_REPLIED_AT] = ""
                 with st.spinner("保存中..."):
                     write_fields(editing_idx, _save_data)
