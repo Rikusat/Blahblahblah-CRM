@@ -802,6 +802,14 @@ elif page == "見込み":
         label = f"#{editing_idx}  {mikomi.loc[editing_idx, label_col_e]}" if label_col_e else f"#{editing_idx}"
         st.caption(f"編集中：{label}")
 
+        _rs_opts = [v for v in SELECT_OPTIONS.get(COL_REPLY_STATUS, []) if v]
+        if _rs_opts and COL_REPLY_STATUS in df.columns:
+            _rs_cur = str(df.loc[editing_idx, COL_REPLY_STATUS]) if COL_REPLY_STATUS in df.columns else ""
+            if _rs_cur in ("nan", "None"):
+                _rs_cur = ""
+            _rs_index = _rs_opts.index(_rs_cur) if _rs_cur in _rs_opts else 0
+            st.selectbox("返信状態", _rs_opts, index=_rs_index, key=f"mikomi_rs_{editing_idx}")
+
         _textarea_cols = [c for c in df.columns if c in TEXTAREA_KEYWORDS]
 
         for _col in _textarea_cols:
@@ -832,6 +840,9 @@ elif page == "見込み":
                     _col: st.session_state.get(f"mikomi_field_{editing_idx}_{_col}", "")
                     for _col in _textarea_cols if _col in df.columns
                 }
+                _rs_val = st.session_state.get(f"mikomi_rs_{editing_idx}")
+                if _rs_val and COL_REPLY_STATUS in df.columns:
+                    _save_data[COL_REPLY_STATUS] = _rs_val
                 with st.spinner("保存中..."):
                     write_fields(editing_idx, _save_data)
                 reload()
