@@ -8,7 +8,7 @@ from sheets import (
     write_claim, write_claim_done, write_claim_content, write_claim_note,
     write_assignee,
     get_board, set_board, get_select_options,
-    DATA_OFFSET, COL_REPLIED, COL_REPLIED_AT, COL_ORDERED, COL_MEMO,
+    DATA_OFFSET, COL_REPLIED, COL_REPLIED_AT, COL_REPLY_STATUS, COL_ORDERED, COL_MEMO,
     COL_CLAIM, COL_CLAIM_DONE, COL_CLAIM_CONTENT, COL_CLAIM_NOTE, COL_ASSIGNEE,
 )
 
@@ -677,8 +677,9 @@ elif page == "見込み":
                 _replied     = _val(row, COL_REPLIED)
                 _claim       = _val(row, COL_CLAIM)
                 _next_act    = _val(row, next_action_col)
-                _replied_at  = _val(row, COL_REPLIED_AT)
-                _assignee    = _val(row, COL_ASSIGNEE) if COL_ASSIGNEE in row.index else ""
+                _replied_at    = _val(row, COL_REPLIED_AT)
+                _reply_status  = _val(row, COL_REPLY_STATUS) if COL_REPLY_STATUS in row.index else ""
+                _assignee      = _val(row, COL_ASSIGNEE) if COL_ASSIGNEE in row.index else ""
 
                 st.markdown(
                     f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
@@ -704,6 +705,12 @@ elif page == "見込み":
                     st.markdown(
                         f"<div style='font-size:.65rem;font-family:monospace;color:#888;"
                         f"margin-bottom:.2rem;'>返信日時 {_replied_at}</div>",
+                        unsafe_allow_html=True,
+                    )
+                if _reply_status:
+                    st.markdown(
+                        f"<div style='font-size:.65rem;font-family:monospace;color:#a0c4ff;"
+                        f"margin-bottom:.2rem;'>返信状態 {_reply_status}</div>",
                         unsafe_allow_html=True,
                     )
                 if _next_act:
