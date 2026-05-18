@@ -749,6 +749,13 @@ elif page == "見込み":
                         st.markdown(f"<div style='font-size:.72rem;font-family:monospace;word-break:break-all;'>🔗 <a href='{_u}' target='_blank'>{_u}</a></div>", unsafe_allow_html=True)
                     if _claim:
                         st.caption(f"⚠️ クレーム：{_claim}")
+                        _claim_content = _val(row, COL_CLAIM_CONTENT) if COL_CLAIM_CONTENT in row.index else ""
+                        if _claim_content:
+                            st.markdown(
+                                f"<div style='color:#EC2D01;font-family:monospace;font-size:.72rem;"
+                                f"white-space:pre-wrap;margin-bottom:.2rem;'>{_claim_content[:200]}{'…' if len(_claim_content) > 200 else ''}</div>",
+                                unsafe_allow_html=True,
+                            )
                     if memo_col:
                         _memo = _val(row, memo_col)
                         if _memo:
