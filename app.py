@@ -398,7 +398,7 @@ if page == "ターミナル":
     # ── 掲示板 ────────────────────────────────────────────────────
     st.divider()
 
-    SIZE_MAP = {"小": "0.85rem", "中": "1.1rem", "大": "1.5rem", "特大": "2rem"}
+    SIZE_MAP = {"小": "1rem", "中": "1.2rem", "大": "1.6rem", "特大": "2.2rem"}
     is_admin = st.session_state.get("admin_mode", False)
 
     def _safe_color(c: str, fallback: str) -> str:
@@ -410,42 +410,42 @@ if page == "ターミナル":
         color   = _safe_color(data.get("color", ""), "#FF8C00" if board_type == "admin" else "#d4d4d4")
         size    = data.get("size", "中") if data.get("size", "中") in SIZE_MAP else "中"
 
-        st.markdown(f"<div style='font-size:.65rem;color:#adadad;font-family:monospace;letter-spacing:3px;margin-bottom:.8rem;'>{label.upper()}</div>", unsafe_allow_html=True)
-        if content:
+        with st.container(border=True):
             st.markdown(
-                f"<div style='color:{color};font-size:{SIZE_MAP[size]};font-family:monospace;"
-                f"background:#0a0a0a;border:1px solid #1e1e1e;border-radius:6px;"
-                f"padding:1rem 1.2rem;white-space:pre-wrap;min-height:60px;'>{content}</div>",
+                f"<div style='font-size:.6rem;color:#666;font-family:monospace;letter-spacing:3px;"
+                f"margin-bottom:.6rem;'>{label.upper()}</div>",
                 unsafe_allow_html=True,
             )
-        else:
-            st.markdown(
-                "<div style='color:#555;font-size:.85rem;font-family:monospace;"
-                "background:#0a0a0a;border:1px dashed #1e1e1e;border-radius:6px;"
-                "padding:1rem 1.2rem;min-height:60px;'>— メッセージなし —</div>",
-                unsafe_allow_html=True,
-            )
-        if editable:
-            with st.expander("✏️ 編集"):
-                draft = st.text_area("メッセージ", value=content, key=f"board_{board_type}_txt", height=120, label_visibility="collapsed", placeholder="メッセージを入力...")
-                ec1, ec2 = st.columns(2)
-                draft_color = ec1.color_picker("文字色", value=color, key=f"board_{board_type}_color")
-                draft_size  = ec2.selectbox("文字サイズ", list(SIZE_MAP.keys()), index=list(SIZE_MAP.keys()).index(size), key=f"board_{board_type}_size")
-                if st.button("💾 保存", key=f"board_{board_type}_save", type="primary", use_container_width=True):
-                    with st.spinner("保存中..."):
-                        set_board(board_type, draft, draft_color, draft_size)
-                    reload()
-                    st.success("掲示板を更新しました")
-                    st.rerun()
+            if content:
+                st.markdown(
+                    f"<div style='color:{color};font-size:{SIZE_MAP[size]};font-family:monospace;"
+                    f"line-height:1.7;white-space:pre-wrap;padding:.2rem 0 .6rem;'>{content}</div>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    "<div style='color:#444;font-size:.9rem;font-family:monospace;"
+                    "padding:.4rem 0 .6rem;'>— メッセージなし —</div>",
+                    unsafe_allow_html=True,
+                )
+            if editable:
+                with st.expander("✏️ 編集"):
+                    draft = st.text_area("メッセージ", value=content, key=f"board_{board_type}_txt", height=120, label_visibility="collapsed", placeholder="メッセージを入力...")
+                    ec1, ec2 = st.columns(2)
+                    draft_color = ec1.color_picker("文字色", value=color, key=f"board_{board_type}_color")
+                    draft_size  = ec2.selectbox("文字サイズ", list(SIZE_MAP.keys()), index=list(SIZE_MAP.keys()).index(size), key=f"board_{board_type}_size")
+                    if st.button("💾 保存", key=f"board_{board_type}_save", type="primary", use_container_width=True):
+                        with st.spinner("保存中..."):
+                            set_board(board_type, draft, draft_color, draft_size)
+                        reload()
+                        st.success("掲示板を更新しました")
+                        st.rerun()
 
-    if is_admin:
-        _render_board("admin", "管理者掲示板", editable=True)
-    else:
-        bc1, bc2 = st.columns(2, gap="large")
-        with bc1:
-            _render_board("admin", "管理者掲示板", editable=False)
-        with bc2:
-            _render_board("sales", "営業掲示板", editable=True)
+    bc1, bc2 = st.columns(2, gap="large")
+    with bc1:
+        _render_board("admin", "管理者掲示板", editable=is_admin)
+    with bc2:
+        _render_board("sales", "営業掲示板", editable=True)
 
 # ---------------------------------------------------------------------------
 # Dashboard
