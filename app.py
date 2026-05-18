@@ -170,7 +170,7 @@ SELECT_OPTIONS: dict[str, list[str]] = {
 TEXTAREA_KEYWORDS: set[str] = (
     set(_raw_settings["テキストエリア列"][1:])
     if "テキストエリア列" in _raw_settings
-    else {"備考", "メモ", "次回アクション", "notes", "memo", "コメント"}
+    else {"備考", "メモ", "アクション記録", "notes", "memo", "コメント"}
 )
 _MONTHLY_TARGET: int = (
     int(_raw_settings["月間目標"][1])
@@ -728,7 +728,7 @@ elif page == "見込み":
     person_col      = find_col(mikomi, "担当者名", "担当者名/代表者名", "代表者名")
     email_col       = find_col(mikomi, "メールアドレス", "メール")
     url_col         = find_col(mikomi, "URL", "url", "ウェブサイト")
-    next_action_col = "次回アクション" if "次回アクション" in mikomi.columns else None
+    next_action_col = "アクション記録" if "アクション記録" in mikomi.columns else None
 
 
     cols = st.columns(N_CARDS_PER_ROW, gap="small")
@@ -781,7 +781,7 @@ elif page == "見込み":
                 if _next_act:
                     st.markdown(
                         f"<div style='font-size:.65rem;font-family:monospace;color:#7ab3ff;"
-                        f"margin-bottom:.2rem;'>次回アクション {_next_act}</div>",
+                        f"margin-bottom:.2rem;'>アクション記録 {_next_act}</div>",
                         unsafe_allow_html=True,
                     )
                 if _assignee:
