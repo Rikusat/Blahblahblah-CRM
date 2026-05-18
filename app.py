@@ -915,9 +915,10 @@ elif page == "受注リスト":
             cols = st.columns(N_CARDS_PER_ROW, gap="small")
         with cols[i]:
             with st.container(border=True):
-                _name    = _val(row, name_col) or f"#{idx}"
-                _ordered = _val(row, COL_ORDERED)
-                _prod    = _val(row, product_col)
+                _name      = _val(row, name_col) or f"#{idx}"
+                _ordered   = _val(row, COL_ORDERED)
+                _prod      = _val(row, product_col)
+                _assignee  = _val(row, COL_ASSIGNEE) if COL_ASSIGNEE in row.index else ""
 
                 st.markdown(
                     f"<div style='font-weight:700;font-size:.82rem;font-family:monospace;"
@@ -940,6 +941,12 @@ elif page == "受注リスト":
                     )
                 if _pills:
                     st.markdown(f"<div style='margin-bottom:.2rem;'>{_pills}</div>", unsafe_allow_html=True)
+                if _assignee:
+                    st.markdown(
+                        f"<div style='font-size:.65rem;font-family:monospace;color:#2FFFB4;"
+                        f"margin-bottom:.2rem;'>👤 担当：{_assignee}</div>",
+                        unsafe_allow_html=True,
+                    )
 
                 _is_open = (st.session_state.get("det_order_open") == idx)
                 if st.button("閉じる ▲" if _is_open else "詳細 ▼", key=f"det_btn_order_{idx}", use_container_width=True):
